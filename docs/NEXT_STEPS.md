@@ -1,35 +1,37 @@
 # NEXT STEPS
 
-## Current Goal: Phase 4 - Authentication & Role-Based Access Control (RBAC) in `server/`
+## Current Goal: Phase 5 - Threat Detection & Scoring Core in `server/`
 
-Phases 0, 0.5, 1, 2, and 3 are verified and completed. The Express server foundation is running with database management, security middleware, error envelopes, and automated tests.
+Phases 0, 0.5, 1, 2, 3, and 4 are verified and completed. The Express server has working authentication, JWT token issuance/verification, server-side RBAC, and an idempotent system admin seed script.
 
-### Phase 4 Checklist
-- [ ] User Model (`server/src/models/User.js`):
-  - Mongoose schema: `email` (unique, lowercase, indexed), `password` (hashed), `role` (`Viewer`, `Analyst`, `Admin` default `Viewer`), `name`, `createdAt`, `updatedAt`.
-  - Passwords hashed with `bcrypt` (work factor >= 12) via pre-save hook.
-  - Instance method `comparePassword(candidate)`.
-  - Ensure password field is omitted from JSON serialization.
-- [ ] JWT Utilities (`server/src/utils/jwt.js`):
-  - `signToken(payload)` using `env.JWT_SECRET` and algorithm `HS256`.
-  - `verifyToken(token)` with expiration and signature validation.
-- [ ] Authentication Middleware (`server/src/middlewares/auth.js`):
-  - `requireAuth`: extracts Bearer token, verifies JWT, loads active user, attaches `req.user`.
-  - `requireRole(...allowedRoles)`: server-side role validation throwing `ForbiddenError`.
-- [ ] Authentication Controller & Routes (`server/src/controllers/authController.js`, `server/src/routes/auth.js`):
-  - `POST /api/v1/auth/register`: Public registration (assigns `Viewer` role only; rejects attempts to specify higher roles).
-  - `POST /api/v1/auth/login`: Authenticates credentials with generic error messages (prevents user enumeration).
-  - `GET /api/v1/auth/me`: Authenticated profile endpoint.
-  - Apply strict rate limiting (`authLimiter`) to login and register routes.
-- [ ] System Admin Seed Script (`server/src/scripts/seedAdmin.js`):
-  - Command-line script creating or updating the initial system Admin using `ADMIN_EMAIL` and `ADMIN_PASSWORD` from `.env`.
-- [ ] Integration Tests (`server/tests/auth.test.js`):
-  - Test registration sets `Viewer` role.
-  - Test login succeeds with valid password and fails with invalid password or email.
-  - Test protected routes reject unauthenticated requests (401).
-  - Test role authorization permits Analyst/Admin and rejects Viewer (403).
-  - Test admin seed script executes idempotently.
-- [ ] Verify with `npm run lint` and `npm test`.
+### Phase 5 Checklist
+- [ ] ML Service Client (`server/src/services/mlClient.js`):
+  - Internal HTTP client communicating with FastAPI ML microservice (`env.ML_SERVICE_URL`).
+  - Injects `X-API-Key: env.ML_API_KEY` header.
+  - Exposes `predictFlow(flowRecord)` and `predictBatch(flowRecords)`.
+  - Implements resilient error handling for timeouts, network failures, and bad gateway responses.
+- [ ] Threat Scoring Engine (`server/src/services/scoringService.js`):
+  - Explainable, transparent 0-100 threat score computation (ADR-003):
+    - Base class weights: Benign (0), PortScan (50), BruteForce (70), DoS/DDoS (75).
+    - ML probability amplification.
+    - Sensitive destination port multipliers (e.g. 21, 22, 23, 80, 443, 3389, 8080).
+    - Protocol risk weighting (TCP, UDP).
+    - Volume and velocity adjustments.
+  - Outputs clamped score [0, 100], risk level (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`), and explainability factor breakdown.
+- [ ] Rule-Based Heuristic Baseline Service (`server/src/services/baselineService.js`):
+  - Simple, deterministic heuristic rules for comparative analysis against ML predictions on the same records:
+    - PortScan heuristics (high packet count with low duration to typical scan targets).
+    - DoS/DDoS heuristics (extreme packet/byte rate exceeding volumetric thresholds).
+    - BruteForce heuristics (short repeated connection attempts to auth ports).
+- [ ] Detection Controller & Routes (`server/src/controllers/detectController.js`, `server/src/routes/detect.js`):
+  - `POST /api/v1/detect/flow`: Requires `Analyst` or `Admin` role. Evaluates single network flow record, executes ML inference, computes threat score, runs baseline heuristic, and returns combined assessment.
+  - `POST /api/v1/detect/batch`: Requires `Analyst` or `Admin` role. Evaluates batch of records (bounded limit).
+  - Zod validation schemas for flow record inputs.
+- [ ] Unit & Integration Tests (`server/tests/scoring.test.js`, `server/tests/detect.test.js`):
+  - Unit tests for `scoringService` scoring boundaries, risk level thresholds, and explanation components.
+  - Unit tests for `baselineService` heuristic classification accuracy.
+  - Integration tests for `POST /api/v1/detect/flow` and `POST /api/v1/detect/batch` with mocked ML microservice responses.
+- [ ] Verify with `npm run format`, `npm run lint`, and `npm test`.
 
 ### Open Questions
 - None.

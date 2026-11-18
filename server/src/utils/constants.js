@@ -1,11 +1,20 @@
 /**
- * System-wide domain constants for roles, attack vectors, risk levels, and incident triage.
+ * System-wide domain constants for roles, audit actions, attack vectors, risk levels, and incident triage.
  */
 
 export const ROLES = Object.freeze({
-  VIEWER: "Viewer",
-  ANALYST: "Analyst",
-  ADMIN: "Admin"
+  VIEWER: "viewer",
+  ANALYST: "analyst",
+  ADMIN: "admin"
+});
+
+export const AUDIT_ACTIONS = Object.freeze({
+  REGISTER: "REGISTER",
+  LOGIN_SUCCESS: "LOGIN_SUCCESS",
+  LOGIN_FAILURE: "LOGIN_FAILURE",
+  LOGOUT: "LOGOUT",
+  ROLE_CHANGE: "ROLE_CHANGE",
+  STATUS_CHANGE: "STATUS_CHANGE"
 });
 
 export const ATTACK_CLASSES = Object.freeze({

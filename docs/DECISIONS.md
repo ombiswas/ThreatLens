@@ -42,3 +42,24 @@
 - **Reason:** Consistency with modern Node.js standards (Node 22 LTS), Vite defaults, and standard `import`/`export` syntax across JavaScript tiers.
 - **Alternatives Considered:**
   - CommonJS in server: Legacy syntax creating inconsistencies with client and modern library exports.
+
+## ADR-006: Password Hashing Security & Public Registration Scope
+- **Date:** 2026-11-18
+- **Status:** Accepted
+- **Decision:** Hash user passwords with `bcrypt` using 12 salt rounds. Enforce that public self-registration assigns the `Viewer` role exclusively, while `Admin` provisioning is handled via an idempotent CLI seed script using verified environment variables.
+- **Reason:** Work factor 12 provides a robust barrier against offline dictionary and rainbow-table attacks while maintaining sub-second API authentication latency. Restricting public registration prevents privilege escalation attacks by design.
+- **Alternatives Considered:**
+  - Allowing role specification on registration: High security vulnerability allowing unauthorized Admin privilege escalation.
+  - Argon2id: Requires additional native compiler dependencies on Windows that complicate cross-platform deployment on free tiers.
+
+## ADR-007: Short-Lived Access Tokens Without Refresh Token Infrastructure
+- **Date:** 2026-11-18
+- **Status:** Accepted
+- **Decision:** Issue stateless short-lived JWT access tokens (default 30 minutes, configurable via `JWT_EXPIRES_IN`) carrying only `sub` and `role`. Do not implement refresh token rotation or persistent token denylists. Logout is treated as client-side token discard combined with server-side audit event persistence.
+- **Reason:**
+  1. *Exposure Window Mitigation:* A short 30-minute validity window ensures that compromised credentials have an ephemeral blast radius without necessitating complex distributed token invalidation systems.
+  2. *Operational Simplicity on Free-Tier:* Persistent refresh token families or distributed token denylists require high-availability Redis or frequent MongoDB writes on every API call. On free-tier cloud infrastructure (Render + MongoDB Atlas M0), stateless verification prevents connection exhaustion and database rate limits.
+  3. *Auditability:* Explicit audit log records (`REGISTER`, `LOGIN_SUCCESS`, `LOGIN_FAILURE`, `LOGOUT`, `ROLE_CHANGE`, `STATUS_CHANGE`) capture user lifecycle and security events with client IP and user-agent metadata.
+- **Alternatives Considered:**
+  - Refresh Tokens in HttpOnly Cookies: Better UX for long-running sessions, but adds cross-origin cookie configuration complexity across separate Vercel and Render domains.
+  - Server-Side Token Denylist in MongoDB: Requires database lookup on every single request, eliminating the performance benefit of JWTs.

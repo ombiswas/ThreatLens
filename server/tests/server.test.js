@@ -53,9 +53,7 @@ describe("Server Infrastructure & Health Endpoints", () => {
   });
 
   it("NoSQL injection with '$' operator is rejected", async () => {
-    const res = await request(app)
-      .post("/api/health")
-      .send({ "$where": "sleep(5000)" });
+    const res = await request(app).post("/api/health").send({ $where: "sleep(5000)" });
     expect(res.status).toBe(422);
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
     expect(res.body.error.message).toContain("keys containing '$' or '.' are forbidden");
@@ -77,9 +75,7 @@ describe("Server Infrastructure & Health Endpoints", () => {
   });
 
   it("CORS permits allowed CLIENT_URL Origin", async () => {
-    const res = await request(app)
-      .get("/api/health")
-      .set("Origin", "http://localhost:5173");
+    const res = await request(app).get("/api/health").set("Origin", "http://localhost:5173");
     expect(res.status).toBe(200);
     expect(res.headers["access-control-allow-origin"]).toBe("http://localhost:5173");
   });

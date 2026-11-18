@@ -9,6 +9,9 @@ import { logger } from "./utils/logger.js";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler.js";
 import { nosqlSanitizer } from "./middlewares/validate.js";
 import { healthRouter } from "./routes/health.js";
+import { authRouter } from "./routes/auth.js";
+import { usersRouter } from "./routes/users.js";
+import { auditLogsRouter } from "./routes/auditLogs.js";
 
 /**
  * Creates and configures the Express application instance.
@@ -66,6 +69,12 @@ export function createApp() {
 
   // 7. Route Mounting
   app.use("/api", healthRouter);
+  app.use("/api/auth", authRouter);
+  app.use("/api/v1/auth", authRouter);
+  app.use("/api/users", usersRouter);
+  app.use("/api/v1/users", usersRouter);
+  app.use("/api/audit-logs", auditLogsRouter);
+  app.use("/api/v1/audit-logs", auditLogsRouter);
 
   // 8. 404 Undefined Route Handler & Central Error Handler
   app.use(notFoundHandler);

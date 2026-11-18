@@ -14,14 +14,19 @@ Protected endpoints require an `Authorization: Bearer <token>` header.
 | GET | `/api/health` | Public | System uptime, timestamp, and MongoDB connection state. | `{"status":"healthy","uptime":120,"database":"connected"}` |
 | GET | `/api/ready` | Public | Readiness probe (returns 200 if DB connected, 503 if disconnected). | `{"status":"ready","database":"connected"}` |
 
-### Authentication & User Management (`/api/v1/auth`, `/api/v1/users`)
+### Authentication & User Management (`/api/auth`, `/api/users`, `/api/audit-logs`)
+*Mounted at both `/api/*` and `/api/v1/*`.*
+
 | Method | Endpoint | Access Role | Description |
 |---|---|---|---|
-| POST | `/api/v1/auth/register` | Public | Register a new user account (defaults to Viewer role). |
-| POST | `/api/v1/auth/login` | Public | Authenticate user credentials and return JWT token. |
-| GET | `/api/v1/auth/me` | Authenticated | Retrieve current user profile and permissions. |
-| GET | `/api/v1/users` | Admin | List all registered users. |
-| PATCH | `/api/v1/users/:id/role` | Admin | Update a user's assigned role. |
+| POST | `/api/auth/register` | Public | Register new user (forces Viewer role). Strict password policy (min 10 chars, uppercase, lowercase, number, symbol, not equal to email). Response (201): `{"status":"success","data":{"user":{...},"token":"..."}}` |
+| POST | `/api/auth/login` | Public | Authenticate credentials. Includes timing defense and account lockout after 5 failures (15 min). Response (200): `{"status":"success","data":{"user":{...},"token":"..."}}` |
+| GET | `/api/auth/me` | Authenticated | Retrieve current user profile. Headers: `Authorization: Bearer <token>`. Response (200): `{"status":"success","data":{"user":{...}}}` |
+| POST | `/api/auth/logout` | Authenticated | Client-side token discard with server-side audit logging. Response (200): `{"status":"success","message":"Logged out successfully"}` |
+| GET | `/api/users` | Admin | List registered users with pagination (`page`, `limit`). Response (200): `{"status":"success","data":{"users":[...],"pagination":{...}}}` |
+| PATCH | `/api/users/:id/role` | Admin | Update user role (`admin`, `analyst`, `viewer`). Self-demotion and demoting the last active administrator are blocked. |
+| PATCH | `/api/users/:id/status` | Admin | Update user active status (`isActive: boolean`). Self-deactivation and disabling the last active administrator are blocked. |
+| GET | `/api/audit-logs` | Admin | Retrieve paginated audit logs with filters (`action`, `userId`, `startDate`, `endDate`). IP is masked for non-admin viewers. |
 
 ### Detection, Scoring & Telemetry (`/api/v1/detect`)
 | Method | Endpoint | Access Role | Description |

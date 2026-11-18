@@ -12,18 +12,14 @@ const envSchema = z.object({
     .pipe(z.number().min(1).max(65535))
     .default("5000"),
   CLIENT_URL: z.string().url().default("http://localhost:5173"),
-  MONGO_URI: z
-    .string()
-    .min(1, "MONGO_URI is required"),
-  JWT_SECRET: z
-    .string()
-    .min(32, "JWT_SECRET must be at least 32 characters in length"),
+  MONGO_URI: z.string().min(1, "MONGO_URI is required"),
+  JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters in length"),
   JWT_EXPIRES_IN: z.string().default("1h"),
   ML_SERVICE_URL: z.string().url().default("http://localhost:7860"),
   ML_API_KEY: z.string().min(1, "ML_API_KEY is required"),
-  LOG_LEVEL: z
-    .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
-    .default("info")
+  ADMIN_EMAIL: z.string().email().optional(),
+  ADMIN_PASSWORD: z.string().min(8).optional(),
+  LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info")
 });
 
 const parsed = envSchema.safeParse(process.env);

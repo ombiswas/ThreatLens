@@ -9,13 +9,17 @@ The following controls are enforced throughout design, development, and deployme
 - [x] Environment variables validated on service boot (fail-fast behavior via Zod in `server/src/config/env.js`).
 
 ### Authentication & Authorization
-- [ ] Passwords hashed with bcrypt (work factor >= 12).
-- [ ] Public registration restricted strictly to minimum role (`Viewer`).
-- [ ] System administrative user seeded exclusively via command-line script and env variables.
-- [ ] JWT tokens configured with short expiration and verified against strong secrets.
-- [ ] Cryptographic algorithm explicitly pinned (`HS256`).
-- [ ] Server-side role-based access control (RBAC) enforced on protected endpoints.
-- [ ] Generic error responses on authentication failure to prevent user enumeration.
+- [x] Passwords hashed with bcrypt (work factor >= 12).
+- [x] Public registration restricted strictly to minimum role (`Viewer`).
+- [x] System administrative user seeded exclusively via command-line script and env variables.
+- [x] JWT tokens configured with short expiration (default 30m) and verified against strong secrets.
+- [x] Cryptographic algorithm explicitly pinned (`HS256`); `alg: none` and tampered tokens strictly rejected.
+- [x] Server-side role-based access control (RBAC) enforced on protected endpoints.
+- [x] Generic error responses on authentication failure (`Invalid credentials`) to prevent user enumeration.
+- [x] Pre-computed dummy bcrypt hash to mitigate timing-discrepancy attacks against non-existent accounts.
+- [x] Automatic account lockout after 5 consecutive failed attempts (15-minute freeze window).
+- [x] Organizational password policy enforced (>= 10 chars, upper/lower/number/symbol, not equal to email).
+- [x] Administrative safeguards preventing self-demotion, self-deactivation, and removing the last active administrator.
 
 ### Network, Headers & Rate Limiting
 - [x] Security headers applied via `helmet` in Express server.
@@ -27,10 +31,10 @@ The following controls are enforced throughout design, development, and deployme
 
 ### Input Validation & Data Sanitization
 - [x] Strict schema validation via Zod on query parameters, route params, and request bodies (`validate.js`).
-- [x] Unknown and excess properties stripped/rejected.
+- [x] Unknown and excess properties stripped/rejected (mass-assignment defense).
 - [x] NoSQL injection defenses implemented (prohibit keys starting with `$` or containing `.` via `nosqlSanitizer`).
-- [ ] Raw request payloads never passed unsanitized to database queries.
-- [ ] IP addresses masked in responses for non-admin viewers.
+- [x] Raw request payloads never passed unsanitized to database queries.
+- [x] IP addresses masked in responses for non-admin viewers (`maskIp` utility).
 
 ### File Ingestion & Export Safety
 - [ ] Dataset upload accepts CSV format only with extension and MIME-type validation.

@@ -9,7 +9,7 @@
 | **Phase 1** | ML offline training & evaluation | Done | 2026-11-18 | Modular training pipeline, baseline heuristic, model evaluation, artifact export (<50MB) |
 | **Phase 2** | ML FastAPI microservice | Done | 2026-11-18 | FastAPI app, Pydantic validation, X-API-Key auth, /health, /model-info, /predict, /predict/batch, HF Dockerfile, tests |
 | **Phase 3** | Server foundation & core infra | Done | 2026-11-18 | Express app factory, Zod env validation, Mongoose, Socket.IO, Pino logging, Helmet, CORS, NoSQL injection guard, rate limiting, Vitest tests |
-| **Phase 4** | Authentication & RBAC | Not started | TBD | JWT auth, bcrypt passwords, role middleware (Viewer/Analyst/Admin) |
+| **Phase 4** | Authentication & RBAC | Done | 2026-11-18 | JWT auth (HS256, 30m), bcrypt (cost 12), timing attack defense with dummy hash, 5-failure/15-min lockout, authenticate & authorize middlewares, /api/auth/* endpoints, admin user management (/api/users), AuditLog model & service with IP masking, seedAdmin script, 21 integration tests |
 | **Phase 5** | Threat detection & scoring core | Not started | TBD | Express scoringService (0-100 score), baselineService, ML client |
 | **Phase 6** | Incidents & datasets management | Not started | TBD | Incident persistence, CSV upload & validation, safe CSV export |
 | **Phase 7** | Realtime telemetry & evaluation stats | Not started | TBD | Socket.IO events, ML vs baseline comparative metrics |
@@ -57,3 +57,31 @@
   - `npm run lint` in `server`: Passed (0 errors).
   - `npm test` in `server`: 8 passed in 6.88s (health, readiness, 404 envelope, malformed JSON, NoSQL injection, Helmet headers, CORS allowlist/block).
   - Real server boot check against in-memory MongoDB: `GET /api/health` returned `200 {status: 'healthy', uptime: 0, database: 'connected'}` with full security headers.
+
+### Session 6 - 2026-11-18
+- **Goal:** Phase 4 Authentication, Role-Based Access Control (RBAC), User Management, and Audit Logging in `server/`.
+- **Files Added/Changed:**
+  - `server/package.json` & `package-lock.json`: Added `bcrypt` and `jsonwebtoken`.
+  - `server/src/models/User.js`: User Mongoose schema with `name`, `email` (unique, lowercase, indexed), `passwordHash` (bcrypt cost 12, `select: false`), `role` (`admin`/`analyst`/`viewer`, default `viewer`), `isActive`, `failedLoginAttempts`, `lockUntil`, `lastLoginAt`, timestamps, and clean `toJSON`/`toObject` omitting `passwordHash` and `__v`.
+  - `server/src/models/AuditLog.js`: Append-only security audit log recording `userId`, `action`, `ip`, `userAgent`, `details`, and `timestamp` (with 90-day retention TTL index).
+  - `server/src/utils/ipMask.js`: IPv4 / IPv6 masking utility preserving privacy for non-admin viewers.
+  - `server/src/utils/jwt.js`: `signToken({ sub, role })` and `verifyToken(token)` pinning `HS256` algorithm, rejecting `alg: none` and tampered/expired tokens.
+  - `server/src/services/authService.js`: `registerUser` (forces viewer, validates organizational password policy: min 10 chars, uppercase, lowercase, numeric, symbol, not equal to email), `loginUser` (bcrypt cost 12, timing-equalization with pre-computed dummy hash, generic `Invalid credentials` message, automatic lockout after 5 failures for 15 minutes), and audit persistence.
+  - `server/src/services/auditService.js`: `logAuditEvent` helper and `getAuditLogs` with pagination and conditional IP masking.
+  - `server/src/middlewares/auth.js`: `authenticate` (validates Bearer token, loads active user, rejects inactive and locked accounts) and `authorize(...roles)` (server-side RBAC validation).
+  - `server/src/validators/authValidators.js`: Zod schemas for registration, login, role updates, and status updates (strict mode rejecting extra keys).
+  - `server/src/controllers/authController.js`: `register`, `login`, `getMe`, `logout` handlers.
+  - `server/src/controllers/userController.js`: `getUsers` (paginated), `updateUserRole`, `updateUserStatus` with safeguards preventing self-demotion, self-deactivation, and demoting/disabling the last active administrator.
+  - `server/src/controllers/auditController.js`: `getAuditLogsController` with pagination and filters.
+  - `server/src/routes/auth.js`: Auth router with dedicated `authLimiter` rate limiter (20 requests / 15 min outside test env).
+  - `server/src/routes/users.js`: User management router restricted to Admin role.
+  - `server/src/routes/auditLogs.js`: Audit log router restricted to Admin role.
+  - `server/src/app.js`: Mounted routers at both `/api/*` and `/api/v1/*`.
+  - `server/src/scripts/seedAdmin.js`: Idempotent system admin seed script from environment credentials (`ADMIN_EMAIL`, `ADMIN_PASSWORD`), never printing plaintext passwords.
+  - `server/tests/auth.test.js`: 21 comprehensive integration tests covering registration, password policy, login, timing attack defense, 5-failure lockout, token tampered/expired/none rejection, RBAC route protection, self-demotion/deactivation blocks, last-admin safeguards, and audit log IP masking.
+  - `docs/API.md`, `docs/SECURITY.md`, `docs/DECISIONS.md` (ADR-007 token storage trade-off), `docs/PROGRESS.md`, `docs/NEXT_STEPS.md`.
+- **Tests & Verification:**
+  - `npm run format`: Prettier cleanly verified and formatted.
+  - `npm run lint`: ESLint 0 errors.
+  - `npm test`: 29 passed (8 server infra, 21 auth/RBAC/audit) in 8.88s with 0 warnings.
+  - `npm audit`: Documented findings in `docs/SECURITY.md` and `docs/PROGRESS.md`.
