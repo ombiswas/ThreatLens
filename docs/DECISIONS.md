@@ -83,3 +83,29 @@
 - **Reason:** Security analysts routinely open incident export CSVs in spreadsheet software (Microsoft Excel, LibreOffice Calc, Google Sheets). Malicious payloads embedded in attacker-controlled network flow metadata (e.g., crafting hostnames or labels like `=cmd|' /C calc'!A0`) could otherwise execute arbitrary code on the analyst's workstation.
 - **Alternatives Considered:**
   - Stripping leading formula characters entirely: Alters the ground-truth data or label values. Prepending `'` allows spreadsheets to safely display the original string verbatim as plain text.
+
+## ADR-010: Room-Based WebSocket Partitioning & Role-Based IP Masking
+- **Date:** 2026-11-18
+- **Status:** Accepted
+- **Decision:** Partition Socket.IO clients into role-specific rooms (`role:admin`, `role:analyst`, `role:viewer`) and user-specific rooms (`user:<userId>`) upon successful JWT handshake authentication. When new incidents are emitted (`incident:new`), dispatch raw payloads with real IP addresses strictly to `role:admin`, while dispatching sanitized payloads with masked IP addresses to `role:analyst` and `role:viewer`.
+- **Reason:** Real-time web sockets bypass HTTP route middleware checks. Emitting a single unmasked broadcast would leak sensitive network topology and internal IP addresses to non-administrator observers. Room-based partitioning ensures zero data leakage at the protocol layer.
+- **Alternatives Considered:**
+  - Client-side masking: Vulnerable to inspection via browser DevTools.
+  - Separate socket namespaces: Overcomplicates client-side connection pooling.
+
+## ADR-011: Server-Side Managed Replay Engine with Single Active User Session
+- **Date:** 2026-11-18
+- **Status:** Accepted
+- **Decision:** Implement network traffic replay as a server-side state machine bounded by user identity (`Map<string, ReplaySession>`), allowing at most one active replay per user. The engine feeds records through the real `detectionService` pipeline, creates real `Incident` documents in MongoDB for attack flows, and streams progress updates over Socket.IO. All timers are cleaned up on stop, socket disconnect, or server shutdown.
+- **Reason:** Educational demonstration requires realistic, observable live telemetry without manual packet capture or live port scanning. Running through the real detection pipeline guarantees that no mock alerts or synthetic results are faked. Bounding the rate (1–50 flows/sec) and capping active sessions prevents server resource starvation.
+- **Alternatives Considered:**
+  - Client-driven replay (sending flows via HTTP loop from React): Causes network congestion and exposes raw dataset rows directly to the browser.
+  - Multi-session concurrency per user: Easily overwhelms free-tier CPU and memory limits.
+
+## ADR-012: In-App Alerts & Rate-Limited External Email Dispatch for Critical Threats
+- **Date:** 2026-11-18
+- **Status:** Accepted
+- **Decision:** When an incident scores in the Critical band (`score >= 80`), create an in-app `Notification` document, broadcast `notification:new` over Socket.IO, and trigger optional external email alerts via Brevo or Resend if configured (`BREVO_API_KEY` or `RESEND_API_KEY`). Enforce a 5-minute cooldown between email dispatches and sanitize all outbound notification bodies.
+- **Reason:** Critical attacks (e.g. volumetric DoS or active brute-force) require immediate SOC awareness. In-app alerts provide zero-dependency real-time alerting, while external email provides out-of-band notification. Rate-limiting prevents mailbox flooding during intense replay sessions.
+- **Alternatives Considered:**
+  - Sending an email for every single critical flow: Results in hundreds of emails during attack replays, rapidly exhausting provider quotas and causing alert fatigue.

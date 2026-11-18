@@ -12,7 +12,7 @@
 | **Phase 4** | Authentication & RBAC | Done | 2026-11-18 | JWT auth (HS256, 30m), bcrypt (cost 12), timing attack defense with dummy hash, 5-failure/15-min lockout, authenticate & authorize middlewares, /api/auth/* endpoints, admin user management (/api/users), AuditLog model & service with IP masking, seedAdmin script, 21 integration tests |
 | **Phase 5** | Threat detection & scoring core | Done | 2026-11-18 | mlClient (retries, timeout, 503 fallback), scoringService (0-100 score, Benign=0, factor sum conservation), baselineService, detectionService, POST /api/detect, 28 new tests, live end-to-end verified |
 | **Phase 6** | Incidents & datasets management | Done | 2026-11-18 | Incident persistence, CSV upload & streaming validation, formula-injection-safe CSV export, 78 tests |
-| **Phase 7** | Realtime telemetry & evaluation stats | Not started | TBD | Socket.IO events, ML vs baseline comparative metrics |
+| **Phase 7** | Realtime telemetry & evaluation stats | Done | 2026-11-18 | Socket.IO telemetry, Replay engine, aggregation stats, comparative evaluation, critical alerts, 100 tests |
 | **Phase 8** | Client foundation & UI shell | Not started | TBD | Layout, auth state, protected routing, dark SOC theme |
 | **Phase 9** | SOC dashboard & incident triage UI | Not started | TBD | Live stream feeds, threat score charts, incident table & detail modal |
 | **Phase 10** | Datasets, baseline comparison & admin UI | Not started | TBD | CSV upload manager, ML vs baseline comparison visualizer, users list |
@@ -143,3 +143,37 @@
     - Incident status transitioned to `Under Review` and investigation note added.
     - Exported 253-line CSV with neutralized formula injection characters and role-masked IPs.
     - Audit logs verified for `DATASET_UPLOAD`, `INCIDENT_STATUS_CHANGE`, and `INCIDENT_EXPORT`.
+
+### Session 9 - 2026-11-18
+- **Goal:** Phase 7 Real-Time Replay, Statistics, Evaluation and Alerts in `server/`.
+- **Files Added/Changed:**
+  - `server/src/models/Notification.js`: Notification model with role scoping (`targetRoles`), single user targeting (`targetUser`), severity (`Info`, `Warning`, `Critical`), read receipt tracking (`readBy`), and incident/dataset linkage.
+  - `server/src/models/Dataset.js`: Added `rawCsv` (`select: false`) field to persist flow CSV content for replay and live evaluation.
+  - `server/src/sockets/socketManager.js`: Authenticated Socket.IO server with JWT handshake verification, CORS enforcement, role/user room management (`role:admin`, `role:analyst`, `role:viewer`, `user:<id>`, `authenticated`), role-based IP masking on `incident:new` events, `replay:progress` and `notification:new` broadcasters, and clean disconnect handling.
+  - `server/src/services/alertService.js`: Automated in-app alerting and rate-limited external email dispatch (via Resend or Brevo with a 5-minute cooldown) for Critical severity incidents (`score >= 80`).
+  - `server/src/services/replayService.js`: Real-time network traffic replay state machine processing records through `detectionService` (bounded 1-50 rps, one active replay per user, server-side timer management and graceful shutdown cleanup).
+  - `server/src/services/statsService.js`: MongoDB aggregation pipelines for `getStatsSummary` (totals and attack ratio), `getStatsTimeline` (minute/hour/day buckets with class breakdown and average score), `getStatsDistribution` (faceted counts by class, risk, status, protocol), and `getTopSources` (with role-based IP masking).
+  - `server/src/services/evaluationService.js`: `getLatestEvaluationMetrics` (ML model architecture and offline metrics alongside baseline reference) and `computeDatasetEvaluation` (live multi-class confusion matrix, precision, recall, F1, false positive/negative counts, and discrepancy examples).
+  - `server/src/controllers/replayController.js`, `statsController.js`, `evaluationController.js`, `notificationController.js`: Route controllers with input validation and response wrapping.
+  - `server/src/routes/replay.js`, `stats.js`, `evaluation.js`, `notifications.js`: Secured routes mounted at `/api/*` and `/api/v1/*`.
+  - `server/src/app.js`: Mounted replay, stats, evaluation, and notification routers.
+  - `server/src/server.js`: Attached authenticated Socket.IO instance and integrated `stopAllReplays()` into graceful shutdown handlers.
+  - `server/src/config/env.js`: Added optional `BREVO_API_KEY`, `RESEND_API_KEY`, and `ALERT_EMAIL_TO` variables.
+  - `server/tests/sockets.test.js`: 5 tests covering handshake authentication, invalid/missing tokens, connection acceptance, and role-based IP masking.
+  - `server/tests/replay.test.js`: 5 tests covering role protection, rate boundary validation (1-50), replay start, 409 conflict on duplicate sessions, and clean stopping.
+  - `server/tests/stats.test.js`: 4 tests verifying summary totals, time-bucketed timelines, multi-faceted distributions, and masked top sources.
+  - `server/tests/evaluation.test.js`: 3 tests verifying metric computation against hand-calculated values, ground truth normalization, and live comparative evaluation.
+  - `server/tests/notifications.test.js`: 5 tests verifying critical alert triggering, role scoping, read status toggling, and read-all functionality.
+  - `server/src/scripts/verifyPhase7Replay.js`: Real end-to-end replay verification script against live `ml-service` and live Socket.IO client.
+  - `docs/API.md`, `docs/DECISIONS.md` (ADR-010, ADR-011, ADR-012), `docs/PROGRESS.md`, `docs/NEXT_STEPS.md`.
+- **Tests & Verification:**
+  - `npm run format`: Prettier cleanly verified and formatted.
+  - `npm run lint`: ESLint 0 errors, 0 warnings.
+  - `npm test`: 100 passed across 13 test suites in 10.69s.
+  - Real replay check executed with `demo_flows.csv` streamed at 25 flows/sec against live `ml-service`:
+    - Connected authenticated Socket.IO client to live server.
+    - Successfully replayed network flow records through detection pipeline.
+    - Received 19 `incident:new` events (masked for analyst), 8 `replay:progress` events.
+    - Verified `GET /api/stats/*` aggregation summaries, distributions, and top sources.
+    - Verified `GET /api/evaluation/latest` and `GET /api/evaluation/dataset/demo` comparative metrics.
+    - Cleanly stopped replay and shutdown test server.

@@ -4,6 +4,7 @@ import { Dataset } from "../models/Dataset.js";
 import { Incident } from "../models/Incident.js";
 import { FEATURE_NAMES } from "../validators/detectValidators.js";
 import { detectBatch } from "./detectionService.js";
+import { checkAndTriggerAlert } from "./alertService.js";
 import { logAuditEvent } from "./auditService.js";
 import { AUDIT_ACTIONS, INCIDENT_STATUSES } from "../utils/constants.js";
 import { ValidationError, NotFoundError } from "../errors/AppError.js";
@@ -208,7 +209,8 @@ export async function processDatasetUpload({
     status: "processing",
     progress: 0,
     rejectedRows,
-    uploadedBy: user._id
+    uploadedBy: user._id,
+    rawCsv: buffer.toString("utf8")
   });
 
   // Batch process through detectionService
@@ -256,7 +258,12 @@ export async function processDatasetUpload({
       }
 
       if (incidentDocs.length > 0) {
-        await Incident.insertMany(incidentDocs);
+        const createdIncidents = await Incident.insertMany(incidentDocs);
+        for (const inc of createdIncidents) {
+          if (inc.riskLevel === "Critical") {
+            await checkAndTriggerAlert({ incident: inc, datasetId: dataset._id });
+          }
+        }
       }
 
       const processedSoFar = i + chunk.length;

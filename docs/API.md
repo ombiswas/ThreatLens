@@ -56,15 +56,67 @@ Protected endpoints require an `Authorization: Bearer <token>` header.
 | GET | `/api/datasets/:id` | Authenticated | Fetch dataset summary: row count, benign count, incident count, class distribution, progress, and rejected rows (capped at 100). |
 | DELETE | `/api/datasets/:id` | Admin | Delete dataset record and cascade-deletes all associated incident records. Logs audit entry. |
 
-### Evaluation (`/api/evaluation`, `/api/v1/evaluation`)
+### Replay (`/api/replay`, `/api/v1/replay`)
+*Mounted at both `/api/replay` and `/api/v1/replay`.*
+
 | Method | Endpoint | Access Role | Description |
 |---|---|---|---|
-| POST | `/api/v1/evaluation/run` | Analyst, Admin | Run evaluation comparing ML model vs. rule-based baseline. |
-| GET | `/api/v1/evaluation/stats` | Authenticated | Fetch model vs. baseline accuracy, confusion matrices, and metrics. |
+| POST | `/api/replay/start` | Analyst, Admin | Start simulated network traffic replay from an uploaded dataset or demo sample (`{"datasetId": "demo" | ObjectId, "ratePerSecond": 1-50}`). Emits live flow telemetry and creates real incidents. Enforces one active replay per user. |
+| POST | `/api/replay/stop` | Analyst, Admin | Stop current user's active replay session and clean up server-side timers. |
+| GET | `/api/replay/status` | Analyst, Admin | Retrieve active replay status, elapsed time, current rate, processed rows, and incident count. |
+
+### Analytics & Statistics (`/api/stats`, `/api/v1/stats`)
+*Mounted at both `/api/stats` and `/api/v1/stats`.*
+
+| Method | Endpoint | Access Role | Description |
+|---|---|---|---|
+| GET | `/api/stats/summary` | Authenticated | High-level SOC telemetry summary: total events evaluated, attack count, high+critical count, critical count, active incidents, and attack ratio. |
+| GET | `/api/stats/timeline` | Authenticated | Time-bucketed incident counts and threat scores (`interval`: `minute`, `hour`, `day`; optional `startDate`, `endDate`). Grouped by class and risk level. |
+| GET | `/api/stats/distribution` | Authenticated | Multi-faceted distribution breakdown across attack class, risk level, triage status, and transport protocol. |
+| GET | `/api/stats/top-sources` | Authenticated | Top source IP addresses ranked by incident volume with average and max threat scores. IP addresses are masked for non-admin viewers. Query param: `limit` (1-20, default 5). |
+
+### Comparative Evaluation (`/api/evaluation`, `/api/v1/evaluation`)
+*Mounted at both `/api/evaluation` and `/api/v1/evaluation`.*
+
+| Method | Endpoint | Access Role | Description |
+|---|---|---|---|
+| GET | `/api/evaluation/latest` | Authenticated | Retrieve ML model architecture and offline training metrics alongside calibrated rule-based baseline reference metrics. |
+| GET | `/api/evaluation/dataset/:id` | Authenticated | Compute live multi-class confusion matrices, precision, recall, macro F1, and weighted F1 comparing the ML model against the rule-based baseline on datasets with ground truth labels. Includes false positive/negative counts and discrepancy examples. |
+
+### Alerts & Notifications (`/api/notifications`, `/api/v1/notifications`)
+*Mounted at both `/api/notifications` and `/api/v1/notifications`.*
+
+| Method | Endpoint | Access Role | Description |
+|---|---|---|---|
+| GET | `/api/notifications` | Authenticated | Paginated query of notifications scoped to the user's role (`unreadOnly`: boolean, `page`, `limit`). |
+| PATCH | `/api/notifications/:id/read` | Authenticated | Mark a single notification as read by the current user. |
+| PATCH | `/api/notifications/read-all` | Authenticated | Mark all visible unread notifications as read. |
 
 ---
 
-## 2. ML Microservice API (`ml-service/`, FastAPI)
+## 2. WebSocket Real-Time Telemetry (Socket.IO)
+
+### Connection & Authentication
+- **Endpoint:** `/socket.io/`
+- **Handshake Authentication:** JWT token provided in `auth.token` or `Authorization: Bearer <token>` header. Missing, expired, or tampered tokens are rejected with `Authentication error`.
+- **CORS:** Strict origin match against `env.CLIENT_URL`.
+- **Rooms Joined on Connect:**
+  - `role:<user.role>` (`role:admin`, `role:analyst`, `role:viewer`)
+  - `user:<user._id>` (private user notification and replay feed)
+  - `authenticated` (general broadcast channel)
+
+### Server-to-Client Events
+| Event Name | Target Room | Payload | Description |
+|---|---|---|---|
+| `incident:new` | `role:admin` | Raw Incident Document | Emitted when a new security incident is detected. Contains unmasked IP addresses for administrators. |
+| `incident:new` | `role:analyst`, `role:viewer` | Sanitized Incident Document | Emitted when a new security incident is detected. Source and destination IPs are masked (`192.168.1.xxx`). |
+| `replay:progress` | `user:<userId>` | `{"datasetId", "progress", "processedRows", "totalRows", "incidentsCount", "status"}` | Live streaming progress updates for the user running the replay. |
+| `replay:feed` | `role:admin`, `role:analyst` | `{"userId", ...progress}` | Real-time replay feed broadcast for SOC analysts monitoring active sessions. |
+| `notification:new` | `role:admin`, `role:analyst` | Notification Document | Instant alert broadcast when a Critical incident (`score >= 80`) is detected. |
+
+---
+
+## 3. ML Microservice API (`ml-service/`, FastAPI)
 Internal server-to-server microservice; requires `X-API-Key: <ML_API_KEY>` header (constant-time verification).
 
 | Method | Endpoint | Auth | Request Body | Description | Response Code |

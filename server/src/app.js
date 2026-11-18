@@ -15,6 +15,10 @@ import { auditLogsRouter } from "./routes/auditLogs.js";
 import { detectRouter } from "./routes/detect.js";
 import { incidentsRouter } from "./routes/incidents.js";
 import { datasetsRouter } from "./routes/datasets.js";
+import replayRouter from "./routes/replay.js";
+import statsRouter from "./routes/stats.js";
+import evaluationRouter from "./routes/evaluation.js";
+import notificationRouter from "./routes/notifications.js";
 
 /**
  * Creates and configures the Express application instance.
@@ -84,6 +88,14 @@ export function createApp() {
   app.use("/api/v1/incidents", incidentsRouter);
   app.use("/api/datasets", datasetsRouter);
   app.use("/api/v1/datasets", datasetsRouter);
+  app.use("/api/replay", replayRouter);
+  app.use("/api/v1/replay", replayRouter);
+  app.use("/api/stats", statsRouter);
+  app.use("/api/v1/stats", statsRouter);
+  app.use("/api/evaluation", evaluationRouter);
+  app.use("/api/v1/evaluation", evaluationRouter);
+  app.use("/api/notifications", notificationRouter);
+  app.use("/api/v1/notifications", notificationRouter);
 
   // 8. 404 Undefined Route Handler & Central Error Handler
   app.use(notFoundHandler);

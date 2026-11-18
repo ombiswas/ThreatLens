@@ -1,8 +1,9 @@
 import http from "node:http";
-import { Server as SocketIOServer } from "socket.io";
 import { createApp } from "./app.js";
 import { env } from "./config/env.js";
 import { connectDB, disconnectDB } from "./config/db.js";
+import { initSocketServer } from "./sockets/socketManager.js";
+import { stopAllReplays } from "./services/replayService.js";
 import { logger } from "./utils/logger.js";
 
 async function startServer() {
@@ -12,24 +13,11 @@ async function startServer() {
   const app = createApp();
   const server = http.createServer(app);
 
-  // Attach Socket.IO
-  const io = new SocketIOServer(server, {
-    cors: {
-      origin: env.CLIENT_URL,
-      methods: ["GET", "POST"]
-    }
-  });
+  // Attach Authenticated Socket.IO Server
+  const io = initSocketServer(server, env.CLIENT_URL);
 
-  // Attach io instance to express app for access in controllers
+  // Attach io instance to express app for access in controllers & services
   app.set("io", io);
-
-  io.on("connection", (socket) => {
-    logger.info({ msg: "Socket.IO client connected", socketId: socket.id });
-
-    socket.on("disconnect", () => {
-      logger.info({ msg: "Socket.IO client disconnected", socketId: socket.id });
-    });
-  });
 
   // Start HTTP listening
   server.listen(env.PORT, () => {
@@ -43,6 +31,8 @@ async function startServer() {
   // Graceful shutdown handling
   const shutdown = async (signal) => {
     logger.info({ msg: `Received ${signal}. Shutting down gracefully...` });
+
+    stopAllReplays();
 
     io.close(() => {
       logger.info({ msg: "Socket.IO closed" });

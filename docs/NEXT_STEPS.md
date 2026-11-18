@@ -1,33 +1,33 @@
 # NEXT STEPS
 
-## Current Goal: Phase 7 - Real-Time Telemetry with Socket.IO and Evaluation Comparison in `server/`
+## Current Goal: Phase 8 - Client Foundation & UI Shell in `client/`
 
-Phases 0 through 6 are verified and completed. The Express server now has authentication, RBAC, audit logging, the threat detection engine, explainable scoring, rule-based baseline comparison, incident persistence, streaming dataset upload, and safe CSV export.
+Phases 0 through 7 are verified and completed. The entire backend foundation, offline training, inference microservice, detection engine, incident store, streaming dataset parser, Socket.IO telemetry, replay engine, stats aggregations, comparative evaluation, and in-app alerting are fully operational and verified with 100 passing tests.
 
-### Phase 7 Checklist
-- [ ] Socket.IO Real-Time Telemetry (`server/src/sockets/`):
-  - Authenticated Socket.IO handshake using JWT (reject missing, expired, or invalid tokens).
-  - Room management: `soc-stream` room for broadcasting live detection events, new incidents, and triage status updates.
-  - Event emitters integrated into `detectionService`, `incidentService`, and `datasetService`:
-    - `telemetry:flow`: Broadcast flow detection event (throttled/batched for high-throughput uploads).
-    - `incident:created`: High-priority alert whenever a non-Benign incident is persisted.
-    - `incident:updated`: Emitted when an incident's triage status or notes change.
-    - `dataset:progress`: Emitted periodically during dataset processing (percentage, processed rows, incident count).
-- [ ] Evaluation Comparison Service (`server/src/services/evaluationService.js`):
-  - Run comparative evaluation on an uploaded dataset with ground truth labels (`POST /api/evaluation/run`).
-  - Calculate comparative metrics:
-    - ML Model: Accuracy, Precision, Recall, F1-score (macro and weighted), and per-class confusion matrix.
-    - Rule-Based Baseline: Accuracy, Precision, Recall, F1-score, and confusion matrix on the identical evaluation set.
-    - Discrepancy analysis: Instances where ML and baseline disagree.
-  - Evaluation Routes (`/api/evaluation`, `/api/v1/evaluation`):
-    - `POST /api/evaluation/run` (Analyst, Admin): Trigger evaluation against an uploaded dataset.
-    - `GET /api/evaluation/:datasetId` (Authenticated): Fetch existing evaluation comparison metrics.
-- [ ] Integration & Unit Tests (`server/tests/evaluation.test.js`, `server/tests/sockets.test.js`):
-  - Socket.IO connection authentication, room joining, and broadcast event delivery.
-  - Evaluation metric computation correctness (tested against known ground-truth confusion matrices).
+### Phase 8 Checklist
+- [ ] Client Architecture & Routing (`client/src/`):
+  - React Router configuration with public routes (`/login`, `/register`), protected routes, and role-guarded routes (`admin` only).
+  - Clean feature-based organization: `src/features/{auth,dashboard,incidents,datasets,evaluation,admin}`, `src/components`, `src/hooks`, `src/services`, `src/utils`.
+- [ ] Authentication Context & State (`client/src/features/auth/`):
+  - In-memory JWT access token management.
+  - Automatic session restoration via `GET /api/auth/me`.
+  - Login, register, and logout flows with client-side token discard and redirect handling.
+  - Role-based route guards (`RequireAuth`, `RequireRole`).
+- [ ] Dark SOC UI Shell & Layout (`client/src/components/layout/`):
+  - Persistent Dark SOC theme using Tailwind CSS (slate/zinc palette with cyan/emerald telemetry accents and amber/rose threat badges).
+  - Navigation sidebar with active state styling and role-aware navigation links (Dashboard, Live Incidents, Datasets & Replay, ML vs Baseline Evaluation, Admin Users).
+  - Top header with system health pill, active socket connection status badge, live notification drawer/dropdown, and user profile/logout menu.
+- [ ] Socket.IO Client Integration (`client/src/services/socket.js`, `client/src/hooks/useSocket.js`):
+  - Authenticated Socket.IO connection manager using in-memory JWT in handshake auth.
+  - Automatic reconnection, clean disconnect on logout, and event subscription hooks.
+  - Global real-time audio/visual alert trigger for `notification:new` and `incident:new`.
+- [ ] API Client & Error Handling (`client/src/services/api.js`):
+  - Axios or native fetch wrapper injecting `Authorization: Bearer <token>`.
+  - Automatic 401 handling (clears auth state and redirects to login).
+  - Standardized error extraction matching `{ error: { code, message, details } }`.
 - [ ] Verification:
-  - Run linting (`npm run lint`), format check (`npm run format:check`), and tests (`npm test`).
-  - Verify live Socket.IO connection with test client and verify evaluation against `demo_flows.csv`.
+  - Run linting (`npm run lint`), format check, and production build (`npm run build`).
+  - Verify responsive UI layout in browser and test authenticated navigation flow.
 
 ### Open Questions
 - None.

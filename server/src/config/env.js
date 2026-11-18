@@ -19,6 +19,9 @@ const envSchema = z.object({
   ML_API_KEY: z.string().min(1, "ML_API_KEY is required"),
   ADMIN_EMAIL: z.string().email().optional(),
   ADMIN_PASSWORD: z.string().min(8).optional(),
+  BREVO_API_KEY: z.string().optional(),
+  RESEND_API_KEY: z.string().optional(),
+  ALERT_EMAIL_TO: z.string().email().optional(),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info")
 });
 
