@@ -35,19 +35,30 @@ Protected endpoints require an `Authorization: Bearer <token>` header.
 |---|---|---|---|
 | POST | `/api/detect` | Analyst, Admin | Classify single flow (`{"flow":{...}}`) or batch (`{"flows":[{...}]}`, max 100). Validates all 67 features with strict Zod schema (unknown keys rejected). Returns `{status:"success", data:{mlClass, confidence, probabilities, baselineClass, baselineRule, score, riskLevel, explanation}}`. |
 
-### Incidents (`/api/v1/incidents`)
-| Method | Endpoint | Access Role | Description |
-|---|---|---|---|
-| GET | `/api/v1/incidents` | Authenticated | Paginated query of recorded security incidents. |
-| GET | `/api/v1/incidents/:id` | Authenticated | Fetch specific incident details and scoring breakdown. |
-| PATCH | `/api/v1/incidents/:id/status` | Analyst, Admin | Update incident triage status (Open, Investigating, Resolved). |
-| GET | `/api/v1/incidents/export` | Analyst, Admin | Export sanitized incident logs to CSV. |
+### Incidents (`/api/incidents`, `/api/v1/incidents`)
+*Mounted at both `/api/incidents` and `/api/v1/incidents`.*
 
-### Datasets & Evaluation (`/api/v1/datasets`, `/api/v1/evaluation`)
 | Method | Endpoint | Access Role | Description |
 |---|---|---|---|
-| POST | `/api/v1/datasets/upload` | Analyst, Admin | Upload validated test dataset CSV for evaluation. |
-| GET | `/api/v1/datasets` | Authenticated | List uploaded datasets. |
+| GET | `/api/incidents` | Authenticated | Paginated query of recorded security incidents. Query params: `page`, `limit` (max 100), `sortBy`, `sortOrder`, `riskLevel`, `mlClass`, `status`, `datasetId`, `startDate`, `endDate`, `search`. IPs are masked for non-admin viewers. |
+| GET | `/api/incidents/:id` | Authenticated | Fetch specific incident details and scoring breakdown. IPs are masked for non-admin viewers. |
+| PATCH | `/api/incidents/:id/status` | Analyst, Admin | Update incident triage status (`New`, `Under Review`, `Resolved`). Enforces valid state transitions. Logs audit entry. |
+| POST | `/api/incidents/:id/notes` | Analyst, Admin | Append an analytical investigation note (`text`: 1-2000 chars, plain text sanitized). Includes author attribution. |
+| GET | `/api/incidents/export` | Authenticated | Export incidents to CSV format with spreadsheet formula injection protection (`'`, `+`, `-`, `@` escaped). IPs masked for non-admins. Capped at 5,000 records. Logs audit entry. |
+
+### Datasets (`/api/datasets`, `/api/v1/datasets`)
+*Mounted at both `/api/datasets` and `/api/v1/datasets`.*
+
+| Method | Endpoint | Access Role | Description |
+|---|---|---|---|
+| POST | `/api/datasets/upload` | Analyst, Admin | Upload network flow CSV file (multipart/form-data, 5MB limit, 20,000 row cap). Validates MIME type, file extension, and binary signatures (PE/ELF/null-byte sniff). Features whitelist validated against 67 CIC-IDS2017 features. Chunked batch detection via ML microservice creates incidents for non-Benign flows and computes class distributions. Logs audit entry. |
+| GET | `/api/datasets` | Authenticated | List uploaded datasets with pagination (`page`, `limit`). |
+| GET | `/api/datasets/:id` | Authenticated | Fetch dataset summary: row count, benign count, incident count, class distribution, progress, and rejected rows (capped at 100). |
+| DELETE | `/api/datasets/:id` | Admin | Delete dataset record and cascade-deletes all associated incident records. Logs audit entry. |
+
+### Evaluation (`/api/evaluation`, `/api/v1/evaluation`)
+| Method | Endpoint | Access Role | Description |
+|---|---|---|---|
 | POST | `/api/v1/evaluation/run` | Analyst, Admin | Run evaluation comparing ML model vs. rule-based baseline. |
 | GET | `/api/v1/evaluation/stats` | Authenticated | Fetch model vs. baseline accuracy, confusion matrices, and metrics. |
 

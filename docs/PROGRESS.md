@@ -11,7 +11,7 @@
 | **Phase 3** | Server foundation & core infra | Done | 2026-11-18 | Express app factory, Zod env validation, Mongoose, Socket.IO, Pino logging, Helmet, CORS, NoSQL injection guard, rate limiting, Vitest tests |
 | **Phase 4** | Authentication & RBAC | Done | 2026-11-18 | JWT auth (HS256, 30m), bcrypt (cost 12), timing attack defense with dummy hash, 5-failure/15-min lockout, authenticate & authorize middlewares, /api/auth/* endpoints, admin user management (/api/users), AuditLog model & service with IP masking, seedAdmin script, 21 integration tests |
 | **Phase 5** | Threat detection & scoring core | Done | 2026-11-18 | mlClient (retries, timeout, 503 fallback), scoringService (0-100 score, Benign=0, factor sum conservation), baselineService, detectionService, POST /api/detect, 28 new tests, live end-to-end verified |
-| **Phase 6** | Incidents & datasets management | Not started | TBD | Incident persistence, CSV upload & validation, safe CSV export |
+| **Phase 6** | Incidents & datasets management | Done | 2026-11-18 | Incident persistence, CSV upload & streaming validation, formula-injection-safe CSV export, 78 tests |
 | **Phase 7** | Realtime telemetry & evaluation stats | Not started | TBD | Socket.IO events, ML vs baseline comparative metrics |
 | **Phase 8** | Client foundation & UI shell | Not started | TBD | Layout, auth state, protected routing, dark SOC theme |
 | **Phase 9** | SOC dashboard & incident triage UI | Not started | TBD | Live stream feeds, threat score charts, incident table & detail modal |
@@ -111,3 +111,35 @@
   - `npm run lint`: ESLint 0 errors.
   - `npm test`: 57 passed across 6 test suites in 10.64s.
   - Real end-to-end check executed against live uvicorn `ml-service`: Ground truth `PortScan` predicted as `PortScan` (92.75% confidence), baseline `Benign`, threat score `76` (`High`), factors `39 + 37 = 76`.
+
+### Session 8 - 2026-11-18
+- **Goal:** Phase 6 Incident Management and Dataset Upload in `server/`.
+- **Files Added/Changed:**
+  - `server/src/models/Incident.js`: Full incident schema with detected timestamp, source/destination IP helpers, protocol, ML prediction & confidence, baseline classification, threat score, risk level, explanation factors, status (`New`, `Under Review`, `Resolved`), analytical notes, dataset link, ground truth label, creator, and compound indexes.
+  - `server/src/models/Dataset.js`: Dataset metadata schema with row count, benign count, incident count, class distribution, upload status, progress, capped rejected rows, and uploader attribution.
+  - `server/src/middlewares/upload.js`: Multer memory storage configuration with 5MB file size limit and CSV MIME filter.
+  - `server/src/validators/datasetValidators.js`: Zod upload schema and dataset query schemas.
+  - `server/src/validators/incidentValidators.js`: Zod query filter validation, status transition schemas, and length-limited investigation note schemas.
+  - `server/src/services/datasetService.js`: Multi-layered CSV validation (file extension, MIME type, PE/ELF/null-byte binary sniffing), header whitelist check against 67 features, streaming row parsing via `csv-parse`, chunked batch prediction via `detectionService.detectBatch`, persistence of non-Benign attack flows as incidents, aggregate counter tracking, and cascade deletion.
+  - `server/src/services/incidentService.js`: Paginated and filtered incident query engine with safe Mongo query constructor (strict NoSQL injection defense), role-based IP masking, status transition validation, analytical notes management, and formula-injection-safe CSV export (`sanitizeCsvCell`).
+  - `server/src/controllers/datasetController.js`: Dataset upload, query, detail, and deletion handlers.
+  - `server/src/controllers/incidentController.js`: Incident list, single incident, status update, note creation, and CSV export handlers.
+  - `server/src/routes/datasets.js` & `server/src/routes/incidents.js`: Secured routes mounted at `/api/datasets`, `/api/v1/datasets`, `/api/incidents`, and `/api/v1/incidents`.
+  - `server/src/app.js`: Mounted datasets and incidents routers.
+  - `server/src/utils/constants.js`: Updated incident status values, transition map, and audit action constants.
+  - `server/src/middlewares/errorHandler.js`: Added unhandled ZodError mapping to structured 422 `VALIDATION_ERROR` responses.
+  - `server/tests/datasets.test.js`: 9 integration tests covering upload size limits, MIME/extension checking, binary spoof sniffing, header whitelisting, malformed row handling, pagination, and admin deletion cascading.
+  - `server/tests/incidents.test.js`: 12 integration tests covering incident pagination, safe query filters, NoSQL operator injection rejection, valid/invalid status transitions, analytical notes length validation, formula injection escaping, and role-based IP masking.
+  - `server/src/scripts/verifyPhase6.js`: Real dataset upload and incident verification script against live `ml-service` using `ml-training/sample/demo_flows.csv`.
+  - `docs/API.md`, `docs/SECURITY.md`, `docs/DECISIONS.md` (ADR-008, ADR-009), `docs/PROGRESS.md`, `docs/NEXT_STEPS.md`.
+- **Tests & Verification:**
+  - `npm run format:fix`: Prettier cleanly formatted all server files.
+  - `npm run lint`: ESLint 0 errors, 0 warnings.
+  - `npm test`: 78 passed across 8 test suites in 11.18s with 0 failures.
+  - Real dataset sample upload check executed with `demo_flows.csv` (500 flow records):
+    - All 500 rows parsed and classified in streaming chunks via live ML microservice.
+    - Class distribution: 248 Benign, 125 DoS/DDoS, 80 PortScan, 47 BruteForce.
+    - 252 non-Benign flows persisted as incidents in MongoDB with complete transparent scoring breakdowns.
+    - Incident status transitioned to `Under Review` and investigation note added.
+    - Exported 253-line CSV with neutralized formula injection characters and role-masked IPs.
+    - Audit logs verified for `DATASET_UPLOAD`, `INCIDENT_STATUS_CHANGE`, and `INCIDENT_EXPORT`.

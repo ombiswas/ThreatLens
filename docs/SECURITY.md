@@ -37,11 +37,13 @@ The following controls are enforced throughout design, development, and deployme
 - [x] IP addresses masked in responses for non-admin viewers (`maskIp` utility).
 
 ### File Ingestion & Export Safety
-- [ ] Dataset upload accepts CSV format only with extension and MIME-type validation.
-- [ ] Maximum file size and row count strictly enforced.
-- [ ] CSV header names validated against strict whitelist.
-- [ ] Uploaded files processed safely without filesystem execution risks.
-- [ ] CSV export sanitizes formulas (prepends single quote `'` to cells starting with `=`, `+`, `-`, `@`).
+- [x] Dataset upload accepts CSV format only with extension, MIME-type, and binary signature validation (PE/ELF and null-byte magic numbers sniffed).
+- [x] Maximum file size (5MB via Multer memory storage) and row count (20,000 row cap) strictly enforced.
+- [x] CSV header names validated against strict whitelist (all 67 CIC-IDS2017 features verified, unknown headers rejected).
+- [x] Uploaded files processed safely via streaming parser (`csv-parse`) in bounded chunks without disk write or execution risks.
+- [x] CSV export sanitizes formulas (prepends single quote `'` to cells starting with `=`, `+`, `-`, `@` via `sanitizeCsvCell`).
+- [x] Export endpoint row limit capped (5,000 records) to prevent unbounded memory usage.
+- [x] Role-based IP address masking applied to both JSON incident responses and CSV export rows.
 
 ### Machine Learning Microservice Security
 - [x] Internal API key protection via `X-API-Key` header with constant-time string comparison (`hmac.compare_digest`).

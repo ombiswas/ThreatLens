@@ -1,29 +1,33 @@
 # NEXT STEPS
 
-## Current Goal: Phase 6 - Incidents & Datasets Management in `server/`
+## Current Goal: Phase 7 - Real-Time Telemetry with Socket.IO and Evaluation Comparison in `server/`
 
-Phases 0, 0.5, 1, 2, 3, 4, and 5 are verified and completed. The Express server now has authentication, RBAC, audit logging, the detection engine, explainable threat scoring, rule-based baseline comparison, resilient ML service integration, and automated test coverage.
+Phases 0 through 6 are verified and completed. The Express server now has authentication, RBAC, audit logging, the threat detection engine, explainable scoring, rule-based baseline comparison, incident persistence, streaming dataset upload, and safe CSV export.
 
-### Phase 6 Checklist
-- [ ] Incident Persistence Model (`server/src/models/Incident.js`):
-  - Mongoose schema: `flowData` (validated numeric features), `mlClass`, `confidence`, `probabilities`, `baselineClass`, `baselineRule`, `score`, `riskLevel`, `explanation`, `status` (`OPEN`, `INVESTIGATING`, `RESOLVED`, `FALSE_POSITIVE`), `assignedTo` (ref to User), `notes`, timestamps.
-  - Compound indexes on `createdAt`, `status`, `riskLevel`, `score`.
-- [ ] Dataset Upload Model (`server/src/models/Dataset.js`):
-  - Mongoose schema: `name`, `filename`, `recordCount`, `classDistribution`, `fileSize`, `fileHash`, `uploadedBy` (ref to User), timestamps.
-- [ ] Incident Service & Controllers (`server/src/services/incidentService.js`, `server/src/controllers/incidentController.js`):
-  - `GET /api/incidents`: Paginated list of recorded incidents with filters (`status`, `riskLevel`, `mlClass`, `startDate`, `endDate`).
-  - `GET /api/incidents/:id`: Detailed view of specific incident including feature vectors and explainability breakdown.
-  - `PATCH /api/incidents/:id/status`: Analyst/Admin status transition triage.
-  - `GET /api/incidents/export`: Sanitized CSV export neutralizing formula injection risks (prefix cells starting with `=`, `+`, `-`, `@` with a single quote).
-- [ ] Dataset Ingestion Service (`server/src/services/datasetService.js`, `server/src/controllers/datasetController.js`):
-  - `POST /api/datasets/upload`: Multer CSV file upload with strict MIME (`text/csv`), size (e.g. 10MB), and row limits.
-  - Header whitelist check against `FEATURE_NAMES`.
-  - Stream-based CSV parsing (no arbitrary eval or command execution).
-- [ ] Integration & Security Tests (`server/tests/incidents.test.js`, `server/tests/datasets.test.js`):
-  - Incident pagination, status update, and authorization tests.
-  - Formula injection neutralization test in CSV export.
-  - Dataset upload validation, header whitelist rejection, and oversized file rejection tests.
-- [ ] Verify with `npm run format`, `npm run lint`, and `npm test`.
+### Phase 7 Checklist
+- [ ] Socket.IO Real-Time Telemetry (`server/src/sockets/`):
+  - Authenticated Socket.IO handshake using JWT (reject missing, expired, or invalid tokens).
+  - Room management: `soc-stream` room for broadcasting live detection events, new incidents, and triage status updates.
+  - Event emitters integrated into `detectionService`, `incidentService`, and `datasetService`:
+    - `telemetry:flow`: Broadcast flow detection event (throttled/batched for high-throughput uploads).
+    - `incident:created`: High-priority alert whenever a non-Benign incident is persisted.
+    - `incident:updated`: Emitted when an incident's triage status or notes change.
+    - `dataset:progress`: Emitted periodically during dataset processing (percentage, processed rows, incident count).
+- [ ] Evaluation Comparison Service (`server/src/services/evaluationService.js`):
+  - Run comparative evaluation on an uploaded dataset with ground truth labels (`POST /api/evaluation/run`).
+  - Calculate comparative metrics:
+    - ML Model: Accuracy, Precision, Recall, F1-score (macro and weighted), and per-class confusion matrix.
+    - Rule-Based Baseline: Accuracy, Precision, Recall, F1-score, and confusion matrix on the identical evaluation set.
+    - Discrepancy analysis: Instances where ML and baseline disagree.
+  - Evaluation Routes (`/api/evaluation`, `/api/v1/evaluation`):
+    - `POST /api/evaluation/run` (Analyst, Admin): Trigger evaluation against an uploaded dataset.
+    - `GET /api/evaluation/:datasetId` (Authenticated): Fetch existing evaluation comparison metrics.
+- [ ] Integration & Unit Tests (`server/tests/evaluation.test.js`, `server/tests/sockets.test.js`):
+  - Socket.IO connection authentication, room joining, and broadcast event delivery.
+  - Evaluation metric computation correctness (tested against known ground-truth confusion matrices).
+- [ ] Verification:
+  - Run linting (`npm run lint`), format check (`npm run format:check`), and tests (`npm test`).
+  - Verify live Socket.IO connection with test client and verify evaluation against `demo_flows.csv`.
 
 ### Open Questions
 - None.

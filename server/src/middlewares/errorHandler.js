@@ -33,6 +33,20 @@ export function errorHandler(err, req, res, next) {
     });
   }
 
+  // Handle Zod validation errors
+  if (err.name === "ZodError" || (err.issues && Array.isArray(err.issues))) {
+    return res.status(422).json({
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Request validation failed",
+        details: err.issues.map((issue) => ({
+          field: issue.path.join("."),
+          message: issue.message
+        }))
+      }
+    });
+  }
+
   // Handle operational AppErrors
   if (err instanceof AppError) {
     return res.status(err.statusCode).json({
