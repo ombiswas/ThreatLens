@@ -5,8 +5,12 @@ description = "AI CyberShield offline dataset processing and ML model training"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "joblib>=1.6.0",
+    "matplotlib>=3.11.2",
     "numpy>=2.4.6",
     "pandas>=3.1.1",
+    "scikit-learn>=1.9.1",
+    "seaborn>=0.13.2",
 ]
 
 [tool.ruff]
@@ -23,6 +27,7 @@ pythonpath = ["."]
 
 [dependency-groups]
 dev = [
+    "ipykernel>=7.4.0",
     "pytest>=9.2.0",
     "ruff>=0.17.5",
 ]

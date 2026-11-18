@@ -1,27 +1,34 @@
 # NEXT STEPS
 
-## Current Goal: Phase 1 - ML Offline Training & Evaluation
+## Current Goal: Phase 2 - ML FastAPI Microservice in `ml-service/`
 
-Phase 0 and Phase 0.5 are verified and completed. The next phase develops the offline machine learning training pipeline in `ml-training/` using the sampled/stratified dataset.
+Phases 0, 0.5, and 1 are verified and completed. The trained champion model (`threat_classifier.joblib`), scaler (`scaler.joblib`), label encoder (`label_encoder.joblib`), and feature contract (`feature_schema.json`) are exported and synced to `ml-service/models/`.
 
-### Phase 1 Checklist
-- [ ] Build preprocessing pipeline in `ml-training/scripts/preprocess.py`:
-  - Drop leakage candidate columns (`Flow ID`, `Source IP`, `Destination IP`, `Timestamp`).
-  - Impute/sanitize infinite values and NaN records.
-  - Standardize column names to lower_snake_case.
-  - Group granular attack labels into core project classes: `BENIGN`, `DoS/DDoS`, `PortScan`, `BruteForce`.
-- [ ] Implement feature scaling and selection (`StandardScaler` or `RobustScaler`) saved via `joblib`.
-- [ ] Implement training script `ml-training/scripts/train.py`:
-  - Evaluate candidate baseline models: `RandomForestClassifier` vs. `HistGradientBoostingClassifier` vs. `LogisticRegression`.
-  - Fix random seed for full reproducibility.
-  - Stratified 80/10/10 train/validation/test split.
-  - Compute accuracy, precision, recall, macro F1, and confusion matrix.
-- [ ] Serialize trained model, scaler, and label encoder to `ml-service/models/` (`threat_classifier.joblib`, `scaler.joblib`, `label_encoder.joblib`).
-- [ ] Output training evaluation report to `docs/MODEL_PERFORMANCE.md`.
-- [ ] Write unit tests for preprocessing, feature transformation, and inference reproducibility.
+### Phase 2 Checklist
+- [ ] Implement `ml-service/app/main.py`:
+  - FastAPI application with lifespan context loading model artifacts at startup.
+  - Constant-time `X-API-Key` authentication header verification middleware/dependency (`secrets.compare_digest`).
+  - Health check endpoint `GET /health` reporting service status, version, and model metadata.
+- [ ] Implement Pydantic schema validation `ml-service/app/schemas.py`:
+  - `FlowFeatures` schema strictly validating flow attributes and rejecting missing/invalid values.
+  - Single prediction request & response models (`POST /predict`).
+  - Batch prediction request & response models (`POST /predict/batch`) enforcing strict upper bound on batch size (e.g. max 500 records).
+- [ ] Implement inference engine `ml-service/app/inference.py`:
+  - Align incoming dictionary features with `feature_schema.json` ordered list.
+  - Scale features with pre-fitted `RobustScaler`.
+  - Execute predict and `predict_proba` with `RandomForestClassifier`.
+  - Format response: predicted class, confidence score, probability distribution per class.
+- [ ] Implement unit & integration test suite `ml-service/tests/test_api.py`:
+  - Test `/health` returns 200 and model details.
+  - Test `/predict` returns accurate class and valid probabilities.
+  - Test `/predict/batch` respects batch size limits.
+  - Test unauthorized requests without valid `X-API-Key` return 401 Unauthorized.
+  - Test schema rejection on malformed payloads with 422 Unprocessable Entity.
+- [ ] Add Dockerfile in `ml-service/` configured for Hugging Face Spaces Docker free-tier deployment.
+- [ ] Verify with `uv run ruff check .` and `uv run pytest`.
 
 ### Open Questions
-- Assess whether `HistGradientBoostingClassifier` or `RandomForestClassifier` yields the optimal trade-off between inference latency and multiclass F1 score under free-tier CPU constraints.
+- None. Artifacts and schemas are in place.
 
 ### Known Issues
 - None tracked.

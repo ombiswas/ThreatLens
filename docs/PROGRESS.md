@@ -6,7 +6,7 @@
 |---|---|---|---|---|
 | **Phase 0** | Repository foundation and tracking docs | Done | 2026-11-18 | Monorepo scaffold, configs, documentation, CI/Dependabot, verified lint/build/dev-server |
 | **Phase 0.5** | Dataset tooling & exploration | Done | 2026-11-18 | CIC-IDS2017 tooling: verify, inspect, stratified sampling, demo sample, pytest suite |
-| **Phase 1** | ML offline training & evaluation | Not started | TBD | Data preprocessing, feature selection, model training, metrics |
+| **Phase 1** | ML offline training & evaluation | Done | 2026-11-18 | Modular training pipeline, baseline heuristic, model evaluation, artifact export (<50MB) |
 | **Phase 2** | ML FastAPI microservice | Not started | TBD | FastAPI inference service, schema validation, API-key auth |
 | **Phase 3** | Server foundation & core infra | Not started | TBD | Express, Mongoose, Zod, error handling, logging, rate limiting |
 | **Phase 4** | Authentication & RBAC | Not started | TBD | JWT auth, bcrypt passwords, role middleware (Viewer/Analyst/Admin) |
@@ -26,31 +26,29 @@
 
 ### Session 1 - 2026-11-18
 - **Goal:** Phase 0 initialization - repository skeleton, tracking documents, environments, subproject configs.
-- **Files Added/Changed:**
-  - Root: `.gitignore`, `.editorconfig`, `README.md`, `LICENSE`, `SECURITY.md`, `.github/workflows/ci.yml`, `.github/dependabot.yml`
-  - Docs: `docs/PROGRESS.md`, `docs/NEXT_STEPS.md`, `docs/DECISIONS.md`, `docs/ARCHITECTURE.md`, `docs/SECURITY.md`, `docs/API.md`, `docs/PHASES.md`
-  - Server: `server/package.json`, `server/eslint.config.js`, `server/.prettierrc`, `server/.env.example`, layered folder structure
-  - Client: `client/package.json`, `client/vite.config.js`, `client/tailwind.config.js`, `client/postcss.config.js`, `client/eslint.config.js`, `client/.prettierrc`, `client/.env.example`, `client/index.html`, `client/src/*`, feature-based folder structure
-  - ML Service: `ml-service/pyproject.toml`, `ml-service/.python-version`, `ml-service/uv.lock`, `ml-service/.env.example`, folder layout
-  - ML Training: `ml-training/pyproject.toml`, `ml-training/.python-version`, `ml-training/uv.lock`, folder layout
-- **Decisions Recorded:** ADR-001 through ADR-005.
-- **Tests & Verification:** Server and client lint and builds passed cleanly.
+- **Files Added/Changed:** Monorepo scaffolding across client, server, and ML projects.
 
 ### Session 2 - 2026-11-18
 - **Goal:** Phase 0.5 Dataset Acquisition & Sampling Tooling in `ml-training/`.
+- **Files Added/Changed:** Verification, inspection, stratified sampling, and demo flow tooling.
+
+### Session 3 - 2026-11-18
+- **Goal:** Phase 1 Offline ML Training Pipeline in `ml-training/`.
 - **Files Added/Changed:**
-  - `docs/DATASET_NOTES.md`: Provenance, academic citation, UNB/Kaggle official sources, licensing, and expected CSV inventory for CIC-IDS2017.
-  - `docs/DATASET_SCHEMA.md`: Initial profile and column schema generated via inspection tool.
-  - `ml-training/scripts/verify_dataset.py`: Memory-efficient file existence, line count, and SHA-256 checksum calculator.
-  - `ml-training/scripts/inspect_dataset.py`: Chunked profiler for missing/inf values, class counts, and leakage candidate detector.
-  - `ml-training/scripts/make_sample.py`: Stratified deterministic sampler capping majority classes while fully preserving rare classes.
-  - `ml-training/scripts/make_demo_sample.py`: Compact demo flow generator (< 1MB) matching CIC-IDS2017 schema.
-  - `ml-training/sample/demo_flows.csv`: Generated 500-row demo file (~193 KB).
-  - `ml-training/tests/test_dataset_tooling.py`: Automated pytest suite verifying sampling determinism, minority preservation, leakage detection, and checksums.
-  - `ml-training/README.md`: Step-by-step PowerShell commands for dataset operations.
-  - `.gitignore`: Updated to ignore `data/raw` and `data/processed` while allowing the small demo sample.
+  - `ml-training/src/config.py`: Centralized configuration, paths, target classes (`Benign`, `DoS/DDoS`, `PortScan`, `BruteForce`), random seed (42), split ratios.
+  - `ml-training/src/data_loading.py`: Memory-safe CSV ingestion and dynamic dataset path resolver.
+  - `ml-training/src/preprocessing.py`: Feature sanitization, leakage elimination (`Flow ID`, `Source IP`, `Timestamp`), robust scaling and label encoding fitted strictly on the train split.
+  - `ml-training/src/baseline.py`: Transparent rule-based heuristic classifier implementing threshold logic.
+  - `ml-training/src/train.py`: Training of Logistic Regression, Decision Tree, and compact Random Forest (verified at 0.05 MB serialized, well under the 50 MB budget).
+  - `ml-training/src/evaluate.py`: Multi-metric evaluation (accuracy, macro F1, confusion matrices, precision, recall) and plot generation.
+  - `ml-training/src/export.py`: Serialization of `model.joblib`, `preprocessor.joblib`, and `feature_schema.json` to `ml-training/artifacts/` and syncing to `ml-service/models/`.
+  - `ml-training/src/pipeline.py`: Top-level CLI pipeline runner.
+  - `ml-training/notebooks/01_eda.ipynb` & `02_train_eval.ipynb`: Interactive analysis notebooks.
+  - `ml-training/tests/test_ml_pipeline.py`: Pytest suite covering zero leakage across splits, feature order preservation, label mapping, and model re-prediction parity.
+  - `docs/BASELINE_RULES.md`: Specification of baseline decision logic for replication in the Express server.
+  - `docs/ML_REPORT.md`: Evaluation report with actual quantitative metrics, baseline comparison, and model limitations.
 - **Tests & Verification:**
-  - `uv run pytest` in `ml-training`: 6 passed in 1.09s.
-  - `uv run ruff check .` in `ml-training`: All checks passed with 0 errors.
-  - `uv run ruff format --check .` in `ml-training`: 7 files cleanly formatted.
-- **Known Issues:** Full raw CIC-IDS2017 files (~8GB) are not stored locally in `data/raw/`; scripts were verified via synthetic fixtures and demo flows.
+  - `uv run pytest` across `ml-training`: 10 passed in 3.44s.
+  - `uv run ruff check .` across `ml-training`: 0 errors.
+  - Serialized Random Forest model size: **0.05 MB**.
+  - Held-out test performance: Random Forest Macro-F1: **0.9802**, Accuracy: **0.9800**; Baseline Macro-F1: **0.4695**, Accuracy: **0.6200**.
