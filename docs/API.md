@@ -1,12 +1,18 @@
 # API Specification
 
 ## Overview
-All Express API endpoints are mounted under `/api/v1`.
+All Express API endpoints are mounted under `/api` or `/api/v1`.
 Protected endpoints require an `Authorization: Bearer <token>` header.
 
 ---
 
 ## 1. Express API Directory
+
+### Infrastructure & Health (`/api`)
+| Method | Endpoint | Access Role | Description | Response Shape |
+|---|---|---|---|---|
+| GET | `/api/health` | Public | System uptime, timestamp, and MongoDB connection state. | `{"status":"healthy","uptime":120,"database":"connected"}` |
+| GET | `/api/ready` | Public | Readiness probe (returns 200 if DB connected, 503 if disconnected). | `{"status":"ready","database":"connected"}` |
 
 ### Authentication & User Management (`/api/v1/auth`, `/api/v1/users`)
 | Method | Endpoint | Access Role | Description |

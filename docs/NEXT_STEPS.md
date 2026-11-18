@@ -1,36 +1,38 @@
 # NEXT STEPS
 
-## Current Goal: Phase 3 - Server Foundation & Core Infrastructure in `server/`
+## Current Goal: Phase 4 - Authentication & Role-Based Access Control (RBAC) in `server/`
 
-Phases 0, 0.5, 1, and 2 are verified and completed. The next phase develops the core Express.js backend API framework in `server/`.
+Phases 0, 0.5, 1, 2, and 3 are verified and completed. The Express server foundation is running with database management, security middleware, error envelopes, and automated tests.
 
-### Phase 3 Checklist
-- [ ] Dependencies installation:
-  - Add Express, Mongoose, Zod, Helmet, Pino, pino-http, dotenv, cors, express-rate-limit.
-  - Add dev dependencies: Jest or Vitest, supertest, mongodb-memory-server.
-- [ ] Core Environment & Configuration (`server/config/`):
-  - Validate environment variables at boot via Zod (`env.js`), enforcing fail-fast behavior.
-  - Set up MongoDB Atlas connection manager with Mongoose (`db.js`).
-  - Configure structured Pino logger (`logger.js`).
-- [ ] Middlewares (`server/middlewares/`):
-  - Centralized error handler (`errorHandler.js`) formatting custom `AppError` classes without stack traces in production.
-  - Request logging middleware using Pino.
-  - Security headers using `helmet`.
-  - Strict CORS allowlist matching `CLIENT_URL`.
-  - Rate limiting (global rate limiter + stricter auth limiter).
-  - JSON body parser with size limit (e.g. 1MB).
-  - Custom NoSQL injection sanitizer (reject keys starting with `$` or containing `.`).
-- [ ] Express App Factory (`server/src/app.js` and `server/src/index.js`):
-  - Mount `/api/v1/health` endpoint returning system, DB, and ML service connectivity status.
-- [ ] Integration Tests (`server/tests/`):
-  - Test `/api/v1/health` with in-memory Mongo using `mongodb-memory-server`.
-  - Test NoSQL injection rejection.
-  - Test rate limiting and security headers (Helmet).
-  - Test centralized error handler formatting.
+### Phase 4 Checklist
+- [ ] User Model (`server/src/models/User.js`):
+  - Mongoose schema: `email` (unique, lowercase, indexed), `password` (hashed), `role` (`Viewer`, `Analyst`, `Admin` default `Viewer`), `name`, `createdAt`, `updatedAt`.
+  - Passwords hashed with `bcrypt` (work factor >= 12) via pre-save hook.
+  - Instance method `comparePassword(candidate)`.
+  - Ensure password field is omitted from JSON serialization.
+- [ ] JWT Utilities (`server/src/utils/jwt.js`):
+  - `signToken(payload)` using `env.JWT_SECRET` and algorithm `HS256`.
+  - `verifyToken(token)` with expiration and signature validation.
+- [ ] Authentication Middleware (`server/src/middlewares/auth.js`):
+  - `requireAuth`: extracts Bearer token, verifies JWT, loads active user, attaches `req.user`.
+  - `requireRole(...allowedRoles)`: server-side role validation throwing `ForbiddenError`.
+- [ ] Authentication Controller & Routes (`server/src/controllers/authController.js`, `server/src/routes/auth.js`):
+  - `POST /api/v1/auth/register`: Public registration (assigns `Viewer` role only; rejects attempts to specify higher roles).
+  - `POST /api/v1/auth/login`: Authenticates credentials with generic error messages (prevents user enumeration).
+  - `GET /api/v1/auth/me`: Authenticated profile endpoint.
+  - Apply strict rate limiting (`authLimiter`) to login and register routes.
+- [ ] System Admin Seed Script (`server/src/scripts/seedAdmin.js`):
+  - Command-line script creating or updating the initial system Admin using `ADMIN_EMAIL` and `ADMIN_PASSWORD` from `.env`.
+- [ ] Integration Tests (`server/tests/auth.test.js`):
+  - Test registration sets `Viewer` role.
+  - Test login succeeds with valid password and fails with invalid password or email.
+  - Test protected routes reject unauthenticated requests (401).
+  - Test role authorization permits Analyst/Admin and rejects Viewer (403).
+  - Test admin seed script executes idempotently.
 - [ ] Verify with `npm run lint` and `npm test`.
 
 ### Open Questions
-- None. `server/.env.example` and architecture layouts are prepared.
+- None.
 
 ### Known Issues
 - None tracked.
