@@ -1,0 +1,614 @@
+{
+  "classes": [
+    "Benign",
+    "BruteForce",
+    "DoS/DDoS",
+    "PortScan"
+  ],
+  "feature_count": 67,
+  "features": [
+    {
+      "name": "Destination Port",
+      "dtype": "int64",
+      "range": {
+        "min": 21.0,
+        "max": 63991.0,
+        "median": 443.0
+      }
+    },
+    {
+      "name": "Flow Duration",
+      "dtype": "int64",
+      "range": {
+        "min": 5.0,
+        "max": 4999796.0,
+        "median": 1993996.0
+      }
+    },
+    {
+      "name": "Total Fwd Packets",
+      "dtype": "int64",
+      "range": {
+        "min": 1.0,
+        "max": 498.0,
+        "median": 31.0
+      }
+    },
+    {
+      "name": "Total Backward Packets",
+      "dtype": "int64",
+      "range": {
+        "min": 0.0,
+        "max": 39.0,
+        "median": 16.0
+      }
+    },
+    {
+      "name": "Total Length of Fwd Packets",
+      "dtype": "int64",
+      "range": {
+        "min": 168.0,
+        "max": 660821.0,
+        "median": 20651.5
+      }
+    },
+    {
+      "name": "Total Length of Bwd Packets",
+      "dtype": "int64",
+      "range": {
+        "min": 0.0,
+        "max": 52377.0,
+        "median": 8487.5
+      }
+    },
+    {
+      "name": "Fwd Packet Length Max",
+      "dtype": "float64",
+      "range": {
+        "min": 0.57,
+        "max": 999.19,
+        "median": 514.985
+      }
+    },
+    {
+      "name": "Fwd Packet Length Min",
+      "dtype": "float64",
+      "range": {
+        "min": 3.06,
+        "max": 997.77,
+        "median": 519.3499999999999
+      }
+    },
+    {
+      "name": "Fwd Packet Length Mean",
+      "dtype": "float64",
+      "range": {
+        "min": 0.02,
+        "max": 998.82,
+        "median": 491.78499999999997
+      }
+    },
+    {
+      "name": "Fwd Packet Length Std",
+      "dtype": "float64",
+      "range": {
+        "min": 5.67,
+        "max": 987.97,
+        "median": 506.17
+      }
+    },
+    {
+      "name": "Bwd Packet Length Max",
+      "dtype": "float64",
+      "range": {
+        "min": 1.72,
+        "max": 999.39,
+        "median": 552.9200000000001
+      }
+    },
+    {
+      "name": "Bwd Packet Length Min",
+      "dtype": "float64",
+      "range": {
+        "min": 2.71,
+        "max": 999.71,
+        "median": 487.42
+      }
+    },
+    {
+      "name": "Bwd Packet Length Mean",
+      "dtype": "float64",
+      "range": {
+        "min": 0.43,
+        "max": 999.47,
+        "median": 485.93
+      }
+    },
+    {
+      "name": "Bwd Packet Length Std",
+      "dtype": "float64",
+      "range": {
+        "min": 3.04,
+        "max": 997.99,
+        "median": 489.905
+      }
+    },
+    {
+      "name": "Flow Bytes/s",
+      "dtype": "float64",
+      "range": {
+        "min": 1.93,
+        "max": 999.68,
+        "median": 490.71000000000004
+      }
+    },
+    {
+      "name": "Flow Packets/s",
+      "dtype": "float64",
+      "range": {
+        "min": 0.11,
+        "max": 999.28,
+        "median": 459.405
+      }
+    },
+    {
+      "name": "Flow IAT Mean",
+      "dtype": "float64",
+      "range": {
+        "min": 2.4,
+        "max": 992.62,
+        "median": 515.795
+      }
+    },
+    {
+      "name": "Flow IAT Std",
+      "dtype": "float64",
+      "range": {
+        "min": 0.93,
+        "max": 998.23,
+        "median": 435.755
+      }
+    },
+    {
+      "name": "Flow IAT Max",
+      "dtype": "float64",
+      "range": {
+        "min": 4.23,
+        "max": 995.94,
+        "median": 504.94000000000005
+      }
+    },
+    {
+      "name": "Flow IAT Min",
+      "dtype": "float64",
+      "range": {
+        "min": 3.01,
+        "max": 999.71,
+        "median": 504.405
+      }
+    },
+    {
+      "name": "Fwd IAT Total",
+      "dtype": "float64",
+      "range": {
+        "min": 1.19,
+        "max": 996.21,
+        "median": 550.23
+      }
+    },
+    {
+      "name": "Fwd IAT Mean",
+      "dtype": "float64",
+      "range": {
+        "min": 0.64,
+        "max": 994.94,
+        "median": 503.115
+      }
+    },
+    {
+      "name": "Fwd IAT Std",
+      "dtype": "float64",
+      "range": {
+        "min": 1.87,
+        "max": 998.65,
+        "median": 500.69
+      }
+    },
+    {
+      "name": "Fwd IAT Max",
+      "dtype": "float64",
+      "range": {
+        "min": 2.86,
+        "max": 996.69,
+        "median": 515.54
+      }
+    },
+    {
+      "name": "Fwd IAT Min",
+      "dtype": "float64",
+      "range": {
+        "min": 2.26,
+        "max": 997.78,
+        "median": 456.515
+      }
+    },
+    {
+      "name": "Bwd IAT Total",
+      "dtype": "float64",
+      "range": {
+        "min": 0.52,
+        "max": 999.09,
+        "median": 484.895
+      }
+    },
+    {
+      "name": "Bwd IAT Mean",
+      "dtype": "float64",
+      "range": {
+        "min": 2.58,
+        "max": 998.97,
+        "median": 486.02
+      }
+    },
+    {
+      "name": "Bwd IAT Std",
+      "dtype": "float64",
+      "range": {
+        "min": 0.59,
+        "max": 998.26,
+        "median": 521.75
+      }
+    },
+    {
+      "name": "Bwd IAT Max",
+      "dtype": "float64",
+      "range": {
+        "min": 0.05,
+        "max": 998.39,
+        "median": 501.23
+      }
+    },
+    {
+      "name": "Bwd IAT Min",
+      "dtype": "float64",
+      "range": {
+        "min": 2.79,
+        "max": 999.69,
+        "median": 502.07000000000005
+      }
+    },
+    {
+      "name": "Fwd PSH Flags",
+      "dtype": "int64",
+      "range": {
+        "min": 0.0,
+        "max": 1.0,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "Bwd PSH Flags",
+      "dtype": "int64",
+      "range": {
+        "min": 0.0,
+        "max": 1.0,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "Fwd URG Flags",
+      "dtype": "int64",
+      "range": {
+        "min": 0.0,
+        "max": 1.0,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "Bwd URG Flags",
+      "dtype": "int64",
+      "range": {
+        "min": 0.0,
+        "max": 1.0,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "Fwd Header Length",
+      "dtype": "float64",
+      "range": {
+        "min": 0.42,
+        "max": 997.0,
+        "median": 475.655
+      }
+    },
+    {
+      "name": "Bwd Header Length",
+      "dtype": "float64",
+      "range": {
+        "min": 0.57,
+        "max": 997.55,
+        "median": 434.605
+      }
+    },
+    {
+      "name": "Fwd Packets/s",
+      "dtype": "float64",
+      "range": {
+        "min": 0.56,
+        "max": 999.53,
+        "median": 470.47
+      }
+    },
+    {
+      "name": "Bwd Packets/s",
+      "dtype": "float64",
+      "range": {
+        "min": 1.98,
+        "max": 999.05,
+        "median": 536.3050000000001
+      }
+    },
+    {
+      "name": "Min Packet Length",
+      "dtype": "float64",
+      "range": {
+        "min": 1.37,
+        "max": 994.71,
+        "median": 519.995
+      }
+    },
+    {
+      "name": "Max Packet Length",
+      "dtype": "float64",
+      "range": {
+        "min": 0.7,
+        "max": 989.93,
+        "median": 493.625
+      }
+    },
+    {
+      "name": "Packet Length Mean",
+      "dtype": "float64",
+      "range": {
+        "min": 1.02,
+        "max": 999.12,
+        "median": 496.745
+      }
+    },
+    {
+      "name": "Packet Length Std",
+      "dtype": "float64",
+      "range": {
+        "min": 0.65,
+        "max": 999.96,
+        "median": 512.6949999999999
+      }
+    },
+    {
+      "name": "Packet Length Variance",
+      "dtype": "float64",
+      "range": {
+        "min": 0.14,
+        "max": 997.54,
+        "median": 475.03
+      }
+    },
+    {
+      "name": "FIN Flag Count",
+      "dtype": "int64",
+      "range": {
+        "min": 0.0,
+        "max": 1.0,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "SYN Flag Count",
+      "dtype": "int64",
+      "range": {
+        "min": 0.0,
+        "max": 1.0,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "RST Flag Count",
+      "dtype": "int64",
+      "range": {
+        "min": 0.0,
+        "max": 1.0,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "PSH Flag Count",
+      "dtype": "int64",
+      "range": {
+        "min": 0.0,
+        "max": 1.0,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "ACK Flag Count",
+      "dtype": "int64",
+      "range": {
+        "min": 0.0,
+        "max": 1.0,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "URG Flag Count",
+      "dtype": "int64",
+      "range": {
+        "min": 0.0,
+        "max": 1.0,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "CWE Flag Count",
+      "dtype": "int64",
+      "range": {
+        "min": 0.0,
+        "max": 1.0,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "ECE Flag Count",
+      "dtype": "int64",
+      "range": {
+        "min": 0.0,
+        "max": 1.0,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "Down/Up Ratio",
+      "dtype": "float64",
+      "range": {
+        "min": 2.79,
+        "max": 999.26,
+        "median": 520.785
+      }
+    },
+    {
+      "name": "Average Packet Size",
+      "dtype": "float64",
+      "range": {
+        "min": 8.5,
+        "max": 999.95,
+        "median": 493.57000000000005
+      }
+    },
+    {
+      "name": "Avg Fwd Segment Size",
+      "dtype": "float64",
+      "range": {
+        "min": 0.19,
+        "max": 999.94,
+        "median": 517.865
+      }
+    },
+    {
+      "name": "Avg Bwd Segment Size",
+      "dtype": "float64",
+      "range": {
+        "min": 2.41,
+        "max": 990.93,
+        "median": 499.64
+      }
+    },
+    {
+      "name": "Init_Win_bytes_forward",
+      "dtype": "float64",
+      "range": {
+        "min": 0.12,
+        "max": 998.11,
+        "median": 509.445
+      }
+    },
+    {
+      "name": "Init_Win_bytes_backward",
+      "dtype": "float64",
+      "range": {
+        "min": 0.96,
+        "max": 999.56,
+        "median": 507.96500000000003
+      }
+    },
+    {
+      "name": "act_data_pkt_fwd",
+      "dtype": "float64",
+      "range": {
+        "min": 3.45,
+        "max": 997.79,
+        "median": 456.48
+      }
+    },
+    {
+      "name": "min_seg_size_forward",
+      "dtype": "float64",
+      "range": {
+        "min": 5.56,
+        "max": 995.22,
+        "median": 492.01
+      }
+    },
+    {
+      "name": "Active Mean",
+      "dtype": "float64",
+      "range": {
+        "min": 2.29,
+        "max": 999.49,
+        "median": 505.97
+      }
+    },
+    {
+      "name": "Active Std",
+      "dtype": "float64",
+      "range": {
+        "min": 4.0,
+        "max": 998.07,
+        "median": 533.24
+      }
+    },
+    {
+      "name": "Active Max",
+      "dtype": "float64",
+      "range": {
+        "min": 8.48,
+        "max": 996.02,
+        "median": 521.3
+      }
+    },
+    {
+      "name": "Active Min",
+      "dtype": "float64",
+      "range": {
+        "min": 2.98,
+        "max": 999.77,
+        "median": 450.27
+      }
+    },
+    {
+      "name": "Idle Mean",
+      "dtype": "float64",
+      "range": {
+        "min": 2.41,
+        "max": 996.77,
+        "median": 500.11
+      }
+    },
+    {
+      "name": "Idle Std",
+      "dtype": "float64",
+      "range": {
+        "min": 4.98,
+        "max": 996.68,
+        "median": 512.395
+      }
+    },
+    {
+      "name": "Idle Max",
+      "dtype": "float64",
+      "range": {
+        "min": 0.17,
+        "max": 999.52,
+        "median": 531.435
+      }
+    },
+    {
+      "name": "Idle Min",
+      "dtype": "float64",
+      "range": {
+        "min": 8.2,
+        "max": 997.65,
+        "median": 514.9449999999999
+      }
+    }
+  ]
+}

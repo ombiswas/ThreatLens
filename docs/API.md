@@ -4,7 +4,9 @@
 All Express API endpoints are mounted under `/api/v1`.
 Protected endpoints require an `Authorization: Bearer <token>` header.
 
-## Endpoint Directory
+---
+
+## 1. Express API Directory
 
 ### Authentication & User Management (`/api/v1/auth`, `/api/v1/users`)
 | Method | Endpoint | Access Role | Description |
@@ -39,11 +41,12 @@ Protected endpoints require an `Authorization: Bearer <token>` header.
 
 ---
 
-## ML Microservice API (`FastAPI`)
-Internal microservice; requires `X-API-Key: <ML_API_KEY>` header.
+## 2. ML Microservice API (`ml-service/`, FastAPI)
+Internal server-to-server microservice; requires `X-API-Key: <ML_API_KEY>` header (constant-time verification).
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/health` | Service health status and loaded model metadata. |
-| POST | `/predict` | Classify a single feature vector. |
-| POST | `/predict/batch` | Classify a batch of feature vectors (bounded batch limit). |
+| Method | Endpoint | Auth | Request Body | Description | Response Code |
+|---|---|---|---|---|---|
+| GET | `/health` | Public | None | Health check & model load status probe. | 200 OK |
+| GET | `/model-info` | `X-API-Key` | None | Active model algorithm, version, features, and offline metrics. | 200 OK / 401 Unauthorized |
+| POST | `/predict` | `X-API-Key` | `{"flow": { ... }}` | Classify single flow; returns class, confidence, and class probabilities. | 200 OK / 401 / 422 Unprocessable |
+| POST | `/predict/batch` | `X-API-Key` | `{"flows": [ ... ]}` | Classify bounded batch (max 500 records). | 200 OK / 401 / 413 Too Large / 422 |

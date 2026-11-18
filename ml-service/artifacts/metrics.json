@@ -1,0 +1,370 @@
+{
+  "metadata": {
+    "dataset_name": "demo_flows.csv",
+    "evaluation_date": "2026-11-18T10:01:13.451561+00:00",
+    "random_seed": 42,
+    "sklearn_version": "1.9.1",
+    "joblib_version": "1.6.0",
+    "num_test_samples": 50,
+    "classes": [
+      "Benign",
+      "BruteForce",
+      "DoS/DDoS",
+      "PortScan"
+    ],
+    "feature_count": 67,
+    "features_in_order": [
+      "Destination Port",
+      "Flow Duration",
+      "Total Fwd Packets",
+      "Total Backward Packets",
+      "Total Length of Fwd Packets",
+      "Total Length of Bwd Packets",
+      "Fwd Packet Length Max",
+      "Fwd Packet Length Min",
+      "Fwd Packet Length Mean",
+      "Fwd Packet Length Std",
+      "Bwd Packet Length Max",
+      "Bwd Packet Length Min",
+      "Bwd Packet Length Mean",
+      "Bwd Packet Length Std",
+      "Flow Bytes/s",
+      "Flow Packets/s",
+      "Flow IAT Mean",
+      "Flow IAT Std",
+      "Flow IAT Max",
+      "Flow IAT Min",
+      "Fwd IAT Total",
+      "Fwd IAT Mean",
+      "Fwd IAT Std",
+      "Fwd IAT Max",
+      "Fwd IAT Min",
+      "Bwd IAT Total",
+      "Bwd IAT Mean",
+      "Bwd IAT Std",
+      "Bwd IAT Max",
+      "Bwd IAT Min",
+      "Fwd PSH Flags",
+      "Bwd PSH Flags",
+      "Fwd URG Flags",
+      "Bwd URG Flags",
+      "Fwd Header Length",
+      "Bwd Header Length",
+      "Fwd Packets/s",
+      "Bwd Packets/s",
+      "Min Packet Length",
+      "Max Packet Length",
+      "Packet Length Mean",
+      "Packet Length Std",
+      "Packet Length Variance",
+      "FIN Flag Count",
+      "SYN Flag Count",
+      "RST Flag Count",
+      "PSH Flag Count",
+      "ACK Flag Count",
+      "URG Flag Count",
+      "CWE Flag Count",
+      "ECE Flag Count",
+      "Down/Up Ratio",
+      "Average Packet Size",
+      "Avg Fwd Segment Size",
+      "Avg Bwd Segment Size",
+      "Init_Win_bytes_forward",
+      "Init_Win_bytes_backward",
+      "act_data_pkt_fwd",
+      "min_seg_size_forward",
+      "Active Mean",
+      "Active Std",
+      "Active Max",
+      "Active Min",
+      "Idle Mean",
+      "Idle Std",
+      "Idle Max",
+      "Idle Min"
+    ]
+  },
+  "models": {
+    "RuleBasedBaseline": {
+      "accuracy": 0.62,
+      "macro_f1": 0.4695,
+      "confusion_matrix": [
+        [
+          25,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          5,
+          0,
+          0
+        ],
+        [
+          11,
+          0,
+          1,
+          0
+        ],
+        [
+          7,
+          0,
+          1,
+          0
+        ]
+      ],
+      "classification_report": {
+        "Benign": {
+          "precision": 0.5813953488372093,
+          "recall": 1.0,
+          "f1-score": 0.7352941176470589,
+          "support": 25.0
+        },
+        "BruteForce": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 5.0
+        },
+        "DoS/DDoS": {
+          "precision": 0.5,
+          "recall": 0.08333333333333333,
+          "f1-score": 0.14285714285714285,
+          "support": 12.0
+        },
+        "PortScan": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 8.0
+        },
+        "accuracy": 0.62,
+        "macro avg": {
+          "precision": 0.5203488372093024,
+          "recall": 0.5208333333333334,
+          "f1-score": 0.4695378151260504,
+          "support": 50.0
+        },
+        "weighted avg": {
+          "precision": 0.5106976744186046,
+          "recall": 0.62,
+          "f1-score": 0.5019327731092438,
+          "support": 50.0
+        }
+      }
+    },
+    "LogisticRegression": {
+      "accuracy": 1.0,
+      "macro_f1": 1.0,
+      "macro_precision": 1.0,
+      "macro_recall": 1.0,
+      "confusion_matrix": [
+        [
+          25,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          5,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          12,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          8
+        ]
+      ],
+      "classification_report": {
+        "Benign": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 25.0
+        },
+        "BruteForce": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 5.0
+        },
+        "DoS/DDoS": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 12.0
+        },
+        "PortScan": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 8.0
+        },
+        "accuracy": 1.0,
+        "macro avg": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 50.0
+        },
+        "weighted avg": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 50.0
+        }
+      }
+    },
+    "DecisionTree": {
+      "accuracy": 1.0,
+      "macro_f1": 1.0,
+      "macro_precision": 1.0,
+      "macro_recall": 1.0,
+      "confusion_matrix": [
+        [
+          25,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          5,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          12,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          8
+        ]
+      ],
+      "classification_report": {
+        "Benign": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 25.0
+        },
+        "BruteForce": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 5.0
+        },
+        "DoS/DDoS": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 12.0
+        },
+        "PortScan": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 8.0
+        },
+        "accuracy": 1.0,
+        "macro avg": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 50.0
+        },
+        "weighted avg": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 50.0
+        }
+      }
+    },
+    "RandomForest": {
+      "accuracy": 0.98,
+      "macro_f1": 0.9802,
+      "macro_precision": 0.9722,
+      "macro_recall": 0.99,
+      "confusion_matrix": [
+        [
+          24,
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          5,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          12,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          8
+        ]
+      ],
+      "classification_report": {
+        "Benign": {
+          "precision": 1.0,
+          "recall": 0.96,
+          "f1-score": 0.9795918367346939,
+          "support": 25.0
+        },
+        "BruteForce": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 5.0
+        },
+        "DoS/DDoS": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 12.0
+        },
+        "PortScan": {
+          "precision": 0.8888888888888888,
+          "recall": 1.0,
+          "f1-score": 0.9411764705882353,
+          "support": 8.0
+        },
+        "accuracy": 0.98,
+        "macro avg": {
+          "precision": 0.9722222222222222,
+          "recall": 0.99,
+          "f1-score": 0.9801920768307324,
+          "support": 50.0
+        },
+        "weighted avg": {
+          "precision": 0.9822222222222223,
+          "recall": 0.98,
+          "f1-score": 0.9803841536614647,
+          "support": 50.0
+        }
+      }
+    }
+  }
+}
