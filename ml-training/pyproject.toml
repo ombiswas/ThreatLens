@@ -4,7 +4,10 @@ version = "0.1.0"
 description = "AI CyberShield offline dataset processing and ML model training"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "numpy>=2.4.6",
+    "pandas>=3.1.1",
+]
 
 [tool.ruff]
 line-length = 100
@@ -16,6 +19,7 @@ ignore = []
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 
 [dependency-groups]
 dev = [

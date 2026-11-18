@@ -1,18 +1,27 @@
 # NEXT STEPS
 
-## Current Goal: Phase 0.5 - Dataset Tooling & Exploration
+## Current Goal: Phase 1 - ML Offline Training & Evaluation
 
-Phase 0 is verified and complete. The next phase establishes offline tooling to acquire, parse, and profile the public intrusion datasets (CIC-IDS2017 / UNSW-NB15).
+Phase 0 and Phase 0.5 are verified and completed. The next phase develops the offline machine learning training pipeline in `ml-training/` using the sampled/stratified dataset.
 
-### Phase 0.5 Checklist
-- [ ] Set up `ml-training/` scripts to download or sample CIC-IDS2017 / UNSW-NB15 data subsets.
-- [ ] Define standardized feature mapping for DoS/DDoS, PortScan, BruteForce, and Benign records.
-- [ ] Create data profiling script to inspect class balances, missing values, infinite values, and numeric ranges.
-- [ ] Establish reproducible train/val/test split generation script with fixed random seed.
-- [ ] Document dataset schemas, feature subsets, and class mappings in `docs/DATASETS.md`.
+### Phase 1 Checklist
+- [ ] Build preprocessing pipeline in `ml-training/scripts/preprocess.py`:
+  - Drop leakage candidate columns (`Flow ID`, `Source IP`, `Destination IP`, `Timestamp`).
+  - Impute/sanitize infinite values and NaN records.
+  - Standardize column names to lower_snake_case.
+  - Group granular attack labels into core project classes: `BENIGN`, `DoS/DDoS`, `PortScan`, `BruteForce`.
+- [ ] Implement feature scaling and selection (`StandardScaler` or `RobustScaler`) saved via `joblib`.
+- [ ] Implement training script `ml-training/scripts/train.py`:
+  - Evaluate candidate baseline models: `RandomForestClassifier` vs. `HistGradientBoostingClassifier` vs. `LogisticRegression`.
+  - Fix random seed for full reproducibility.
+  - Stratified 80/10/10 train/validation/test split.
+  - Compute accuracy, precision, recall, macro F1, and confusion matrix.
+- [ ] Serialize trained model, scaler, and label encoder to `ml-service/models/` (`threat_classifier.joblib`, `scaler.joblib`, `label_encoder.joblib`).
+- [ ] Output training evaluation report to `docs/MODEL_PERFORMANCE.md`.
+- [ ] Write unit tests for preprocessing, feature transformation, and inference reproducibility.
 
 ### Open Questions
-- Target primary dataset: evaluate whether CIC-IDS2017 (Wednesday/Friday subsets covering DoS, PortScan, and BruteForce) or UNSW-NB15 provides the cleaner feature subset for fast, robust inference in free-tier memory constraints.
+- Assess whether `HistGradientBoostingClassifier` or `RandomForestClassifier` yields the optimal trade-off between inference latency and multiclass F1 score under free-tier CPU constraints.
 
 ### Known Issues
 - None tracked.

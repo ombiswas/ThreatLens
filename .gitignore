@@ -35,6 +35,10 @@ ml-training/data/
 ml-service/models/*.joblib
 !ml-service/models/.gitkeep
 
+# Allow demo flow sample under 1MB if present
+!ml-training/sample/
+!ml-training/sample/demo_flows.csv
+
 # Build and runtime outputs
 client/dist/
 server/dist/
