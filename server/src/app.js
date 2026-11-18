@@ -12,6 +12,7 @@ import { healthRouter } from "./routes/health.js";
 import { authRouter } from "./routes/auth.js";
 import { usersRouter } from "./routes/users.js";
 import { auditLogsRouter } from "./routes/auditLogs.js";
+import { detectRouter } from "./routes/detect.js";
 
 /**
  * Creates and configures the Express application instance.
@@ -75,6 +76,8 @@ export function createApp() {
   app.use("/api/v1/users", usersRouter);
   app.use("/api/audit-logs", auditLogsRouter);
   app.use("/api/v1/audit-logs", auditLogsRouter);
+  app.use("/api/detect", detectRouter);
+  app.use("/api/v1/detect", detectRouter);
 
   // 8. 404 Undefined Route Handler & Central Error Handler
   app.use(notFoundHandler);

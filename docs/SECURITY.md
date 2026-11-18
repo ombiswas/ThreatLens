@@ -48,6 +48,8 @@ The following controls are enforced throughout design, development, and deployme
 - [x] Strict Pydantic input validation for features with extra fields forbidden (`ConfigDict(extra="forbid")`).
 - [x] Maximum batch size limits enforced (`MAX_BATCH_SIZE`).
 - [x] Model artifacts loaded strictly from static paths, never dynamic user input.
+- [x] Node.js `MLClient` resilient retry with exponential backoff for cold starts (3 attempts, 10s timeout).
+- [x] Safe 503 fallback handling (`ServiceUnavailableError`) with zero credential or internal URL leakage.
 
 ### Frontend Security
 - [ ] Zero usage of `dangerouslySetInnerHTML`.

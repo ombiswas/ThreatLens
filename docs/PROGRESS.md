@@ -10,7 +10,7 @@
 | **Phase 2** | ML FastAPI microservice | Done | 2026-11-18 | FastAPI app, Pydantic validation, X-API-Key auth, /health, /model-info, /predict, /predict/batch, HF Dockerfile, tests |
 | **Phase 3** | Server foundation & core infra | Done | 2026-11-18 | Express app factory, Zod env validation, Mongoose, Socket.IO, Pino logging, Helmet, CORS, NoSQL injection guard, rate limiting, Vitest tests |
 | **Phase 4** | Authentication & RBAC | Done | 2026-11-18 | JWT auth (HS256, 30m), bcrypt (cost 12), timing attack defense with dummy hash, 5-failure/15-min lockout, authenticate & authorize middlewares, /api/auth/* endpoints, admin user management (/api/users), AuditLog model & service with IP masking, seedAdmin script, 21 integration tests |
-| **Phase 5** | Threat detection & scoring core | Not started | TBD | Express scoringService (0-100 score), baselineService, ML client |
+| **Phase 5** | Threat detection & scoring core | Done | 2026-11-18 | mlClient (retries, timeout, 503 fallback), scoringService (0-100 score, Benign=0, factor sum conservation), baselineService, detectionService, POST /api/detect, 28 new tests, live end-to-end verified |
 | **Phase 6** | Incidents & datasets management | Not started | TBD | Incident persistence, CSV upload & validation, safe CSV export |
 | **Phase 7** | Realtime telemetry & evaluation stats | Not started | TBD | Socket.IO events, ML vs baseline comparative metrics |
 | **Phase 8** | Client foundation & UI shell | Not started | TBD | Layout, auth state, protected routing, dark SOC theme |
@@ -85,3 +85,29 @@
   - `npm run lint`: ESLint 0 errors.
   - `npm test`: 29 passed (8 server infra, 21 auth/RBAC/audit) in 8.88s with 0 warnings.
   - `npm audit`: Documented findings in `docs/SECURITY.md` and `docs/PROGRESS.md`.
+
+### Session 7 - 2026-11-18
+- **Goal:** Phase 5 Threat Detection Core & Scoring Engine in `server/`.
+- **Files Added/Changed:**
+  - `server/src/config/scoring.js`: Scoring configuration with weights (`wClass: 0.6`, `wConf: 0.4`), class severity weights (`DoS/DDoS: 1.0`, `BruteForce: 0.85`, `PortScan: 0.65`, `Benign: 0.0`), and risk bands (`Critical: >=80`, `High: >=60`, `Medium: >=30`, `Low: <30`).
+  - `server/src/services/scoringService.js`: Pure functions `calculateThreatScore` (clamped 0-100, Benign=0, explanation factors strictly sum to score) and `getRiskLevel`.
+  - `server/src/services/baselineService.js`: Pure rule-based baseline port from `ml-training` & `docs/BASELINE_RULES.md` evaluating BruteForce, DoS/DDoS, PortScan, and Benign heuristics.
+  - `server/src/services/mlClient.js`: Resilient HTTP client for FastAPI ML service with `X-API-Key`, request timeouts, exponential backoff retries (3 attempts), safe 503 fallback (`ServiceUnavailableError`), and credential/internal-URL protection.
+  - `server/src/services/detectionService.js`: Detection orchestrator coordinating record validation, ML classification, threat scoring, and baseline comparison for single and chunked batch flows.
+  - `server/src/validators/detectValidators.js`: Strict 67-feature Zod schema derived from `feature_schema.json` rejecting unknown extra fields.
+  - `server/src/controllers/detectController.js`: Single and batch detection controller.
+  - `server/src/routes/detect.js`: Route mounted at `/api/detect` and `/api/v1/detect` restricted to Analyst and Admin roles.
+  - `server/src/app.js`: Mounted detect router.
+  - `server/src/errors/AppError.js`: Added `ServiceUnavailableError` (503).
+  - `server/src/middlewares/validate.js`: Enhanced `.strict()` handling for Zod union schemas.
+  - `server/tests/scoring.test.js`: 8 unit tests for scoring boundaries, Benign invariant, risk bands, and factor sum conservation.
+  - `server/tests/baseline.test.js`: 6 unit tests for BruteForce, DoS/DDoS, PortScan, and Benign heuristic rules.
+  - `server/tests/mlClient.test.js`: 6 unit tests for mocked fetch, retries, 401 handling, timeout, and 503 fallback.
+  - `server/tests/detect.test.js`: 8 integration tests for route auth, strict validation, single/batch prediction, and 503 ML-down handling.
+  - `server/src/scripts/e2eCheck.js`: Real end-to-end check script against live `ml-service` with real dataset record from `demo_flows.csv`.
+  - `docs/ARCHITECTURE.md`, `docs/API.md`, `docs/SECURITY.md`, `docs/PROGRESS.md`, `docs/NEXT_STEPS.md`.
+- **Tests & Verification:**
+  - `npm run format`: Prettier cleanly verified and formatted.
+  - `npm run lint`: ESLint 0 errors.
+  - `npm test`: 57 passed across 6 test suites in 10.64s.
+  - Real end-to-end check executed against live uvicorn `ml-service`: Ground truth `PortScan` predicted as `PortScan` (92.75% confidence), baseline `Benign`, threat score `76` (`High`), factors `39 + 37 = 76`.

@@ -2,20 +2,29 @@ import { ValidationError } from "../errors/AppError.js";
 
 /**
  * Validates request components (body, params, query) using a Zod schema.
- * Rejects unknown extra properties strictly.
+ * Rejects unknown extra properties strictly if supported by the schema.
  * @param {Object} schemas Object with optional body, params, query Zod schemas
  */
 export function validate(schemas) {
   return (req, res, next) => {
     try {
       if (schemas.params) {
-        req.params = schemas.params.strict().parse(req.params);
+        req.params =
+          typeof schemas.params.strict === "function"
+            ? schemas.params.strict().parse(req.params)
+            : schemas.params.parse(req.params);
       }
       if (schemas.query) {
-        req.query = schemas.query.strict().parse(req.query);
+        req.query =
+          typeof schemas.query.strict === "function"
+            ? schemas.query.strict().parse(req.query)
+            : schemas.query.parse(req.query);
       }
       if (schemas.body) {
-        req.body = schemas.body.strict().parse(req.body);
+        req.body =
+          typeof schemas.body.strict === "function"
+            ? schemas.body.strict().parse(req.body)
+            : schemas.body.parse(req.body);
       }
       next();
     } catch (err) {

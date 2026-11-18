@@ -28,11 +28,12 @@ Protected endpoints require an `Authorization: Bearer <token>` header.
 | PATCH | `/api/users/:id/status` | Admin | Update user active status (`isActive: boolean`). Self-deactivation and disabling the last active administrator are blocked. |
 | GET | `/api/audit-logs` | Admin | Retrieve paginated audit logs with filters (`action`, `userId`, `startDate`, `endDate`). IP is masked for non-admin viewers. |
 
-### Detection, Scoring & Telemetry (`/api/v1/detect`)
+### Detection, Scoring & Telemetry (`/api/detect`)
+*Mounted at both `/api/detect` and `/api/v1/detect`.*
+
 | Method | Endpoint | Access Role | Description |
 |---|---|---|---|
-| POST | `/api/v1/detect/flow` | Analyst, Admin | Submit single network flow record for real-time scoring. |
-| POST | `/api/v1/detect/batch` | Analyst, Admin | Submit a batch of records for batch classification and scoring. |
+| POST | `/api/detect` | Analyst, Admin | Classify single flow (`{"flow":{...}}`) or batch (`{"flows":[{...}]}`, max 100). Validates all 67 features with strict Zod schema (unknown keys rejected). Returns `{status:"success", data:{mlClass, confidence, probabilities, baselineClass, baselineRule, score, riskLevel, explanation}}`. |
 
 ### Incidents (`/api/v1/incidents`)
 | Method | Endpoint | Access Role | Description |
