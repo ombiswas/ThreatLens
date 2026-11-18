@@ -1,0 +1,21 @@
+{
+  "name": "ai-cybershield-server",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Backend API server for AI CyberShield",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "test": "node --test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "eslint": "^9.20.0",
+    "prettier": "^3.5.0"
+  }
+}

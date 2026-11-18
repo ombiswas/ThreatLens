@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+          cache-dependency-path: server/package-lock.json
+      - name: Install dependencies
+        run: cd server && npm ci
+      - name: Lint
+        run: cd server && npm run lint
+      - name: Test
+        run: |
+          cd server
+          npm test --if-present
+
+  client:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+          cache-dependency-path: client/package-lock.json
+      - name: Install dependencies
+        run: cd client && npm ci
+      - name: Lint
+        run: cd client && npm run lint
+      - name: Build
+        run: cd client && npm run build
+
+  ml-service:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          enable-cache: true
+      - name: Set up Python
+        run: uv python install 3.11
+      - name: Install dependencies
+        run: cd ml-service && uv sync --frozen
+      - name: Lint
+        run: cd ml-service && uv run ruff check .
+      - name: Test
+        run: |
+          cd ml-service
+          if [ -d "tests" ] && [ "$(ls -A tests/*.py 2>/dev/null)" ]; then
+            uv run pytest
+          else
+            echo "No test files present yet, skipping pytest."
+          fi
