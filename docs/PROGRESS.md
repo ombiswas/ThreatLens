@@ -14,7 +14,7 @@
 | **Phase 6** | Incidents & datasets management | Done | 2026-11-18 | Incident persistence, CSV upload & streaming validation, formula-injection-safe CSV export, 78 tests |
 | **Phase 7** | Realtime telemetry & evaluation stats | Done | 2026-11-18 | Socket.IO telemetry, Replay engine, aggregation stats, comparative evaluation, critical alerts, 100 tests |
 | **Phase 8** | Client foundation & UI shell | Done | 2026-11-18 | React Router, TanStack Query, Auth context & session restore, Axios interceptors with 401 handling, cold-start banner, accessible shared UI library (Button, Input, Select, Badge, Card, Table, Modal, ConfirmDialog, Tabs, Skeleton, States), dark SOC layout with Ember Studio design tokens, Vercel CSP security headers, 28 Vitest tests, live dev server + API verification |
-| **Phase 9** | SOC dashboard & incident triage UI | Not started | TBD | Live stream feeds, threat score charts, incident table & detail modal |
+| **Phase 9** | SOC dashboard & incident triage UI | Done | 2026-11-19 | Summary KPI cards, Recharts timeline & distributions, top attack sources table, live Socket.IO stream panel (pause/resume, 50-item cap, batch updates), searchable/filterable/sortable incidents table with URL-synced params, incident forensic detail modal with explainable threat score breakdown & factor conservation, status transitions, investigation notes, safe CSV export, 45 tests |
 | **Phase 10** | Datasets, baseline comparison & admin UI | Not started | TBD | CSV upload manager, ML vs baseline comparison visualizer, users list |
 | **Phase 11** | Testing & security hardening | Not started | TBD | End-to-end integration tests, security checklist audit, dependency audit |
 | **Phase 12** | Production packaging & deployment | Not started | TBD | Dockerfile, Render/Vercel/HuggingFace configurations |
@@ -223,3 +223,40 @@
     - Executed login request against real API with admin credentials: HTTP 200 OK, received JWT token and user identity `admin@cybershield.local` (`admin` role).
     - Verified `GET /api/auth/me` with Bearer token: HTTP 200 OK, session restored.
     - Verified invalid credentials rejection: HTTP 401 with standard error envelope.
+
+### Session 11 - 2026-11-19
+- **Goal:** Phase 9 SOC Dashboard & Incident Triage UI in `client/src/features/{dashboard,incidents}`.
+- **Files Added/Changed:**
+  - `client/src/services/statsApi.js`: API client functions for `/api/stats/summary`, `/api/stats/timeline`, `/api/stats/distribution`, and `/api/stats/top-sources`.
+  - `client/src/services/incidentApi.js`: API client functions for `/api/incidents` (filtering, pagination, sorting), `/api/incidents/:id` (detail), status transitions, investigation note additions, and `exportIncidentsCsv` with safe blob downloading.
+  - `client/src/features/dashboard/SummaryCards.jsx`: 4 KPI metric cards (Total Flow Events, Total Attacks Detected, High & Critical Threats, Attack Flow Ratio) with responsive skeletons and warm craft accents.
+  - `client/src/features/dashboard/TimelineChart.jsx`: Recharts stacked AreaChart (`DoS/DDoS` terracotta, `PortScan` amber, `BruteForce` rose) with minute/hour/day aggregation controls, custom dark tooltip, and empty states. Memoized with `React.memo`.
+  - `client/src/features/dashboard/DistributionCharts.jsx`: Recharts Donut PieChart for ML classification breakdown and BarChart for Risk severity distribution with accessible color mapping and tooltips. Memoized with `React.memo`.
+  - `client/src/features/dashboard/TopSourcesTable.jsx`: Top attacking source IP table with masked IP privacy indicators, incident counts, max score risk badges, and attack vector chips.
+  - `client/src/features/dashboard/LiveFeedPanel.jsx`: Real-time Socket.IO stream subscriber with live connection indicator, Pause/Resume toggle, Clear action, 50-item strict cap preventing memory bloat, and 250ms batch buffer to avoid React re-render storms during high-speed replays.
+  - `client/src/features/dashboard/DashboardPage.jsx`: Assembled dashboard with TanStack Query auto-refetches, interval selectors, live stream, and incident inspection modal wiring.
+  - `client/src/features/incidents/IncidentsPage.jsx`: Filterable, searchable, sortable, paginated incident repository with validated URL search params, 350ms debounced IP search, filter reset, and formula-injection-safe CSV export button.
+  - `client/src/features/incidents/IncidentDetailModal.jsx`: Forensic dossier modal showing 67-feature overview, explainable threat score breakdown (class severity points + confidence points = total score), ML vs Heuristic Baseline concordance/divergence indicator, role-gated status transition buttons (restricted to Analyst/Admin), and plain-text investigation notes thread.
+  - `client/src/tests/dashboard.test.jsx`: 11 Vitest tests covering summary cards, timeline intervals, distribution empty/filled states, top sources masking, live feed capped length (50 items), and pause/resume logic.
+  - `client/src/tests/incidents.test.jsx`: 6 Vitest tests covering incidents table rendering, search/filter query updating, safe CSV export trigger, factor conservation breakdown, ML vs baseline divergence display, role-gated status transitions, and note creation.
+  - `server/src/scripts/verifyPhase9Stack.js`: Full stack live verification script running in-memory MongoDB, seeding Admin/Analyst, spawning FastAPI ML service on 7860, ingesting `demo_flows.csv` (500 flows, 252 incidents), starting live Socket.IO replay at 25 fps, capturing live stream events, testing all REST stats endpoints, executing status transitions, adding analyst notes, and exporting safe CSVs.
+  - `docs/DECISIONS.md`: Added ADR-015 (Live Telemetry Stream Throttling & Memory-Bounded Buffer).
+- **Tests & Verification:**
+  - `npm run format`: Prettier cleanly verified (0 style issues).
+  - `npm run lint`: ESLint 0 errors, 0 warnings across both `client/` and `server/`.
+  - `npm test` in `client/`: 45 passed across 6 test suites in 2.66s.
+  - `npm run build`: Production bundle built cleanly with Vite in 5.95s.
+  - Full Stack Live Verification (`verifyPhase9Stack.js`):
+    - Spawned ML service on port 7860 (`uv run uvicorn app.main:app`).
+    - Seeded Admin and Analyst accounts.
+    - Ingested `demo_flows.csv`: 500 rows, 252 incidents created (`{"PortScan":80, "Benign":248, "BruteForce":47, "DoS/DDoS":125}`).
+    - Connected authenticated Socket.IO client (Analyst role).
+    - Started live replay at 25 flows/sec; captured 14 live stream events over Socket.IO with role-masked source IPs (`192.168.1.xxx`, score: 76, risk: High).
+    - Verified `GET /api/stats/summary`: Total Events 500, Attacks 267, High/Critical 266, Attack Ratio 53.4%.
+    - Verified `GET /api/stats/timeline`: 1 hourly interval returned with byClass breakdowns.
+    - Verified `GET /api/stats/distribution`: byClass `{"BruteForce":50, "DoS/DDoS":131, "PortScan":86}`, byRisk `{"Critical":170, "Medium":1, "High":96}`.
+    - Verified `GET /api/stats/top-sources`: Masked IPs for Analyst role.
+    - Verified `PATCH /api/incidents/:id/status`: Transitioned status `New -> Under Review`.
+    - Verified `POST /api/incidents/:id/notes`: Added note "Forensic packet inspection confirms volumetric UDP Flood attack pattern."
+    - Verified `GET /api/incidents/:id`: Confirmed explainable threat score 84 (`Critical`), factors strictly conserved: `attack_class_severity (51pts) + model_confidence (33pts) = 84pts`.
+    - Verified `GET /api/incidents/export`: 268 rows exported with formula injection protections.

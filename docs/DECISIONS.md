@@ -127,3 +127,12 @@
 - **Alternatives Considered:**
   - Redux Toolkit: Excessive boilerplate for a clean 6-view application.
   - Storing JWT in `localStorage`: High XSS vulnerability window compared to memory + `sessionStorage`.
+
+## ADR-015: Live Telemetry Stream Throttling & Memory-Bounded Buffer
+- **Date:** 2026-11-19
+- **Status:** Accepted
+- **Decision:** In `LiveFeedPanel.jsx`, buffer incoming Socket.IO `incident:new` events in a non-state reference array and flush them to React component state in throttled batches at 250ms intervals (`BATCH_INTERVAL_MS`). The maximum list size is strictly capped at 50 items (`MAX_LIVE_FEED_ITEMS = 50`) using a FIFO eviction slice. A Pause/Resume mechanism holds incoming events in the buffer during inspection without dropping telemetry.
+- **Reason:** High-speed replay sessions stream at rates up to 50 flows/second. Triggering a React component re-render on every individual WebSocket message creates re-render storms, degrades UI frame rates, and causes browser memory bloat over extended monitoring sessions. Controlled batching preserves 60fps responsiveness while capping memory overhead.
+- **Alternatives Considered:**
+  - Direct `setState` on every socket message: High CPU usage, jerky rendering during replay.
+  - Unbounded list growth: Memory leak causing browser tab crashes during long sessions.
