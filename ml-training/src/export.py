@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 from typing import Any
+
 import joblib
 
 from src.config import ARTIFACTS_DIR
@@ -14,7 +15,7 @@ def export_artifacts(
     output_dir: Path | None = None,
     sync_to_ml_service: bool = True,
 ) -> dict[str, Path]:
-    """Serialize model.joblib, preprocessor.joblib (standard scikit-learn dict), and feature_schema.json."""
+    """Serialize model.joblib, preprocessor.joblib, and feature_schema.json."""
     target_dir = output_dir or ARTIFACTS_DIR
     target_dir.mkdir(parents=True, exist_ok=True)
 
@@ -65,7 +66,11 @@ def export_artifacts(
         ml_service_artifacts_dir = target_dir.parent.parent / "ml-service" / "artifacts"
         if ml_service_artifacts_dir.exists():
             joblib.dump(model, ml_service_artifacts_dir / "model.joblib", compress=3)
-            joblib.dump(preprocessor_dict, ml_service_artifacts_dir / "preprocessor.joblib", compress=3)
+            joblib.dump(
+                preprocessor_dict,
+                ml_service_artifacts_dir / "preprocessor.joblib",
+                compress=3,
+            )
             with open(ml_service_artifacts_dir / "feature_schema.json", "w", encoding="utf-8") as f:
                 json.dump(schema_data, f, indent=2)
             print("  Synced artifacts to ml-service/artifacts/ successfully.")

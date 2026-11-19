@@ -19,6 +19,7 @@ import replayRouter from "./routes/replay.js";
 import statsRouter from "./routes/stats.js";
 import evaluationRouter from "./routes/evaluation.js";
 import notificationRouter from "./routes/notifications.js";
+import docsRouter from "./routes/docs.js";
 
 /**
  * Creates and configures the Express application instance.
@@ -96,6 +97,8 @@ export function createApp() {
   app.use("/api/v1/evaluation", evaluationRouter);
   app.use("/api/notifications", notificationRouter);
   app.use("/api/v1/notifications", notificationRouter);
+  app.use("/api/docs", docsRouter);
+  app.use("/api/v1/docs", docsRouter);
 
   // 8. 404 Undefined Route Handler & Central Error Handler
   app.use(notFoundHandler);
