@@ -71,6 +71,33 @@ export const onSocketStatusChange = (callback) => {
   };
 };
 
+export const onReplayProgress = (callback) => {
+  const s = socket || connectSocket();
+  if (!s) return () => {};
+  s.on("replay:progress", callback);
+  return () => {
+    s.off("replay:progress", callback);
+  };
+};
+
+export const onNotificationNew = (callback) => {
+  const s = socket || connectSocket();
+  if (!s) return () => {};
+  s.on("notification:new", callback);
+  return () => {
+    s.off("notification:new", callback);
+  };
+};
+
+export const onIncidentNew = (callback) => {
+  const s = socket || connectSocket();
+  if (!s) return () => {};
+  s.on("incident:new", callback);
+  return () => {
+    s.off("incident:new", callback);
+  };
+};
+
 const notifyStatus = (status) => {
   statusListeners.forEach((cb) => cb(status));
 };

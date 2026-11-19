@@ -15,7 +15,7 @@
 | **Phase 7** | Realtime telemetry & evaluation stats | Done | 2026-11-18 | Socket.IO telemetry, Replay engine, aggregation stats, comparative evaluation, critical alerts, 100 tests |
 | **Phase 8** | Client foundation & UI shell | Done | 2026-11-18 | React Router, TanStack Query, Auth context & session restore, Axios interceptors with 401 handling, cold-start banner, accessible shared UI library (Button, Input, Select, Badge, Card, Table, Modal, ConfirmDialog, Tabs, Skeleton, States), dark SOC layout with Ember Studio design tokens, Vercel CSP security headers, 28 Vitest tests, live dev server + API verification |
 | **Phase 9** | SOC dashboard & incident triage UI | Done | 2026-11-19 | Summary KPI cards, Recharts timeline & distributions, top attack sources table, live Socket.IO stream panel (pause/resume, 50-item cap, batch updates), searchable/filterable/sortable incidents table with URL-synced params, incident forensic detail modal with explainable threat score breakdown & factor conservation, status transitions, investigation notes, safe CSV export, 45 tests |
-| **Phase 10** | Datasets, baseline comparison & admin UI | Not started | TBD | CSV upload manager, ML vs baseline comparison visualizer, users list |
+| **Phase 10** | Datasets, baseline comparison & admin UI | Done | 2026-11-19 | Drag-and-drop CSV upload with client-side header validation, progress tracking, controlled replay console with live socket progress, comparative evaluation (ML vs Heuristic Baseline, Recharts per-class metrics, confusion matrix heatmap, discrepancy explorer, honest limitations), admin user management (RBAC controls, self-demotion safeguards), security audit trail viewer, live notifications bell with unread badge |
 | **Phase 11** | Testing & security hardening | Not started | TBD | End-to-end integration tests, security checklist audit, dependency audit |
 | **Phase 12** | Production packaging & deployment | Not started | TBD | Dockerfile, Render/Vercel/HuggingFace configurations |
 | **Phase 13** | Final documentation & viva defense prep | Not started | TBD | Comprehensive project report, presentation guide, viva demo script |
@@ -260,3 +260,45 @@
     - Verified `POST /api/incidents/:id/notes`: Added note "Forensic packet inspection confirms volumetric UDP Flood attack pattern."
     - Verified `GET /api/incidents/:id`: Confirmed explainable threat score 84 (`Critical`), factors strictly conserved: `attack_class_severity (51pts) + model_confidence (33pts) = 84pts`.
     - Verified `GET /api/incidents/export`: 268 rows exported with formula injection protections.
+
+### Session 12 - 2026-11-19
+- **Goal:** Phase 10 Datasets Ingestion, Comparative Evaluation & Admin UI in `client/src/features/{datasets,evaluation,admin}`.
+- **Files Added/Changed:**
+  - `client/src/utils/constants.js`: Shared frontend domain constants for `FEATURE_NAMES` (67 CIC-IDS2017 features), `ALLOWED_MIME_TYPES`, `MAX_FILE_SIZE_BYTES` (5MB), `ROLES`, `ATTACK_CLASSES`, and `INCIDENT_STATUSES`.
+  - `client/src/features/datasets/csvValidator.js`: Client-side CSV pre-flight validator mirroring backend rules (checks `.csv` extension, 5MB size limit, MIME type, executable magic numbers `MZ`/`ELF`, null bytes, and validates CSV header against all 67 required features).
+  - `client/src/services/datasetApi.js`: API client for fetching datasets, multipart upload with upload progress tracking, and admin dataset deletion.
+  - `client/src/services/replayApi.js`: API client for replay session status, starting replay (datasetId, flowsPerSec), and stopping replay.
+  - `client/src/services/evaluationApi.js`: API client for retrieving model metadata (`/api/evaluation/latest`) and comparative live evaluation (`/api/evaluation/dataset/:id`).
+  - `client/src/services/userApi.js`: API client for admin user list, updating roles (`/api/users/:id/role`), and updating active status (`/api/users/:id/status`).
+  - `client/src/services/auditLogApi.js`: API client for paginated audit log queries with action and date filters.
+  - `client/src/services/notificationApi.js`: API client for in-app alert retrieval and mark-as-read endpoints.
+  - `client/src/services/socket.js`: Extended with subscription helpers `onReplayProgress`, `onNotificationNew`, and `onIncidentNew`.
+  - `client/src/features/datasets/DatasetsPage.jsx`: Full dataset ingestion suite featuring drag-and-drop CSV upload, live upload progress bar, schema validation preview, rejected rows reporting, catalog table with class distributions, accessible delete confirmation dialog, and traffic replay controller (1-50 fps slider, start/stop actions, and live socket progress bar).
+  - `client/src/features/evaluation/EvaluationPage.jsx`: Comparative benchmark suite between Random Forest ML and Heuristic Rule Baseline. Features model metadata cards (version, trees, feature count), comparative metrics table with absolute advantage delta badges, per-class Recharts F1 comparison bar chart, accessible multi-class confusion matrix heatmap with count/intensity styling, false positive / false negative discrepancy explorer with drill-down into `IncidentDetailModal`, and an honest operational limitations panel derived from `docs/ML_REPORT.md`.
+  - `client/src/features/admin/UsersPage.jsx`: Admin-only account management console with paginated operator list, role badges, active status toggles, safety constraint summaries (blocking self-demotion and deactivation of the last active administrator), and accessible confirmation modals.
+  - `client/src/features/admin/AuditLogsPage.jsx`: Security audit trail viewer featuring action dropdown filters, date range filters, client IP inspection, and structured metadata formatting.
+  - `client/src/components/layout/TopBar.jsx`: Integrated notification bell with real-time unread count badge, dropdown alert feed, mark-as-read per item, and mark-all-read action.
+  - `client/src/tests/datasets.test.jsx`: 10 Vitest tests covering CSV client validation (rejection of non-csv, >5MB, binary executables, missing features; acceptance of valid 67-column header), page rendering, replay rate slider adjustment, start replay mutation, and role restrictions for Viewers.
+  - `client/src/tests/evaluation.test.jsx`: 5 Vitest tests covering model architecture rendering, comparative metrics table, confusion matrix heatmap, discrepancy tables, and honest limitations panel.
+  - `client/src/tests/admin.test.jsx`: 5 Vitest tests covering users account table, self-demotion prevention, role modification modal, audit log rendering, and action filtering.
+  - `server/src/scripts/verifyPhase10Stack.js`: End-to-end full stack live verification script exercising CSV upload (500 flows, 252 incidents), Socket.IO replay streaming at 25 fps, live comparative evaluation retrieval, admin user RBAC updates, and audit trail inspection.
+  - `docs/DECISIONS.md`: Added ADR-016 (Client-Side Flow Schema Pre-validation and Comparative Evaluation UX).
+- **Tests & Verification:**
+  - `npm run lint` in `client/`: 0 errors, 0 warnings.
+  - `npm test` in `client/`: 65 tests passed across 9 test files in 6.37s.
+  - `npm run build` in `client/`: Production bundle built cleanly with Vite in 8.36s.
+  - `npm run lint` in `server/`: 0 errors, 0 warnings.
+  - `npm test` in `server/`: 100 tests passed across 13 test files in 19.43s.
+  - Full Stack Live Verification (`verifyPhase10Stack.js`):
+    - Spawned ML service on port 7860 (`uv run uvicorn app.main:app`), confirmed healthy.
+    - Provisioned in-memory MongoDB and Express server on port 5062.
+    - Seeded Administrator and Analyst accounts with JWT authentication.
+    - Ingested real sample CSV (`demo_flows.csv`): 500 flows, 252 incidents generated across PortScan (80), Benign (248), BruteForce (47), and DoS/DDoS (125).
+    - Verified `GET /api/datasets`: HTTP 200, returned 1 ingested dataset.
+    - Initiated live replay at 25 fps: captured 6 Socket.IO `replay:progress` events, stream halted safely.
+    - Verified `GET /api/evaluation/dataset/:id`: Evaluated 500 flows; Random Forest ML demonstrated +39.5% advantage over rule baseline; computed multi-class confusion matrix, false positives (5), and false negatives (5).
+    - Verified `GET /api/users`: HTTP 200, 2 registered accounts.
+    - Verified `PATCH /api/users/:id/role`: Successfully promoted analyst to admin.
+    - Verified `GET /api/audit-logs`: Recorded compliance events (`ROLE_CHANGE`, `DATASET_UPLOAD`, `REGISTER`).
+    - Verified `GET /api/notifications`: 20 alerts recorded.
+    - Clean teardown with graceful socket and server closure.

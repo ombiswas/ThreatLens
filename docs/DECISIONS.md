@@ -136,3 +136,12 @@
 - **Alternatives Considered:**
   - Direct `setState` on every socket message: High CPU usage, jerky rendering during replay.
   - Unbounded list growth: Memory leak causing browser tab crashes during long sessions.
+
+## ADR-016: Client-Side Flow Schema Pre-validation and Comparative Evaluation UX
+- **Date:** 2026-11-19
+- **Status:** Accepted
+- **Decision:** Implement client-side pre-flight validation for CSV uploads (`csvValidator.js`) verifying extension, MIME, size (<5MB), binary null bytes / PE executable headers, and inspecting the CSV header for the full set of 67 CIC-IDS2017 feature names before initiating network transfer. In the Comparative Evaluation suite (`EvaluationPage.jsx`), render side-by-side performance metrics, multi-class confusion matrix heatmaps with accessible textual labels, and an honest operational limitations panel derived from `docs/ML_REPORT.md`.
+- **Reason:** Client-side pre-validation provides immediate operator feedback (<50ms) and prevents uploading megabytes of malformed or invalid files to the server. For academic evaluation and viva presentation, rendering explicit comparison against a heuristic baseline on identical test data demonstrates the scientific rigor and machine learning advantage of the Random Forest model over rule-based systems.
+- **Alternatives Considered:**
+  - Server-only CSV validation: Slow turnaround time, wasted network bandwidth for large invalid files.
+  - Omission of heuristic baseline comparison: Weakens project evaluation defense; viva committee requires objective benchmark evidence proving ML superiority.
