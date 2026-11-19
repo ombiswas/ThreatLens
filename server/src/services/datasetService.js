@@ -6,6 +6,7 @@ import { FEATURE_NAMES } from "../validators/detectValidators.js";
 import { detectBatch } from "./detectionService.js";
 import { checkAndTriggerAlert } from "./alertService.js";
 import { logAuditEvent } from "./auditService.js";
+import { stopReplaysForDataset } from "./replayService.js";
 import { AUDIT_ACTIONS, INCIDENT_STATUSES } from "../utils/constants.js";
 import { ValidationError, NotFoundError } from "../errors/AppError.js";
 import { logger } from "../utils/logger.js";
@@ -365,6 +366,9 @@ export async function deleteDataset(id, user, ip = "unknown", userAgent = "unkno
   if (!dataset) {
     throw new NotFoundError("Dataset not found");
   }
+
+  // Stop any active replay sessions streaming this dataset
+  stopReplaysForDataset(dataset._id);
 
   const deleteResult = await Incident.deleteMany({ datasetId: dataset._id });
   await Dataset.findByIdAndDelete(dataset._id);

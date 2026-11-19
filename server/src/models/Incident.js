@@ -124,5 +124,7 @@ const incidentSchema = new mongoose.Schema(
 // Compound indexes for performant SOC dashboard queries
 incidentSchema.index({ status: 1, riskLevel: 1, detectedAt: -1 });
 incidentSchema.index({ datasetId: 1, detectedAt: -1 });
+incidentSchema.index({ riskLevel: 1, detectedAt: -1 });
+incidentSchema.index({ mlClass: 1, detectedAt: -1 });
 
 export const Incident = mongoose.model("Incident", incidentSchema);

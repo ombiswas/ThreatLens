@@ -145,3 +145,19 @@
 - **Alternatives Considered:**
   - Server-only CSV validation: Slow turnaround time, wasted network bandwidth for large invalid files.
   - Omission of heuristic baseline comparison: Weakens project evaluation defense; viva committee requires objective benchmark evidence proving ML superiority.
+
+## ADR-017: Security Hardening, Production Config Guards & Database Index Optimization
+- **Date:** 2026-11-19
+- **Status:** Accepted
+- **Decision:**
+  1. Enforce strict configuration guards: under `NODE_ENV=production`, server boot fails immediately if placeholder/test secrets (`super_secret_jwt_key_...`, `changeme`) are present, or if `ADMIN_EMAIL` and strong `ADMIN_PASSWORD` (min 12 chars) are omitted.
+  2. Map Mongoose `CastError` (malformed ObjectIds) directly to HTTP 400 Bad Request with error code `INVALID_IDENTIFIER` instead of leaking internal 500 errors.
+  3. Map CORS origin rejections directly to HTTP 403 Forbidden with error code `CORS_FORBIDDEN`.
+  4. Ensure background traffic replay sessions terminate automatically if an administrator deletes the target dataset (`stopReplaysForDataset(datasetId)`).
+  5. Add compound indexes to MongoDB collections (`Incident`: `{ status: 1, riskLevel: 1, detectedAt: -1 }`, `{ riskLevel: 1, detectedAt: -1 }`, `{ mlClass: 1, detectedAt: -1 }`, `{ datasetId: 1, detectedAt: -1 }`; `AuditLog`: `{ action: 1, timestamp: -1 }`; `Notification`: `{ targetRoles: 1, createdAt: -1 }`, `{ targetUser: 1, createdAt: -1 }`), verified via `explain("executionStats")` to achieve pure `IXSCAN` index traversal with zero in-memory sort stages.
+  6. Enforce automated WCAG 2.1 AA accessibility testing using `@axe-core/react` / `vitest-axe` across all shared UI components.
+- **Reason:** Real-world SOC applications must withstand fuzzing, malicious input sequences, and resource exhaustion without leaking internal architecture or halting server execution. Index optimization prevents un-indexed table scans from overwhelming free-tier MongoDB instances during high-volume replay or audit queries.
+- **Alternatives Considered:**
+  - Allowing weak default secrets with runtime warnings: High operational risk of misconfigured deployments exposing the entire system in production.
+  - Runtime sort operations without compound indexes: High database latency and memory exhaustion when querying incidents across 20,000+ flow records.
+

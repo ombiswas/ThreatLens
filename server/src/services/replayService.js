@@ -314,6 +314,33 @@ export function getReplayStatus(userId) {
 }
 
 /**
+ * Gracefully stops all active replay sessions associated with a specific dataset ID.
+ * Called when a dataset is deleted by an administrator.
+ *
+ * @param {string} datasetId
+ * @returns {number} Count of stopped sessions
+ */
+export function stopReplaysForDataset(datasetId) {
+  let stoppedCount = 0;
+  for (const [userId, session] of activeReplays.entries()) {
+    if (session.datasetId === datasetId.toString()) {
+      session.stopped = true;
+      if (session.timer) {
+        globalThis.clearInterval(session.timer);
+      }
+      activeReplays.delete(userId);
+      stoppedCount++;
+      logger.info({
+        msg: "Active replay stopped due to underlying dataset deletion",
+        userId,
+        datasetId: session.datasetId
+      });
+    }
+  }
+  return stoppedCount;
+}
+
+/**
  * Gracefully stops all active replay sessions across the server.
  */
 export function stopAllReplays() {

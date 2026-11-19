@@ -13,6 +13,16 @@ export function errorHandler(err, req, res, next) {
 
   const isProduction = process.env.NODE_ENV === "production";
 
+  // Handle CORS policy rejection errors
+  if (err.message && err.message.includes("CORS policy")) {
+    return res.status(403).json({
+      error: {
+        code: "CORS_FORBIDDEN",
+        message: "Origin not allowed by CORS policy"
+      }
+    });
+  }
+
   // Handle body-parser / JSON parse errors (e.g. malformed JSON body)
   if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
     return res.status(400).json({
@@ -43,6 +53,16 @@ export function errorHandler(err, req, res, next) {
           field: issue.path.join("."),
           message: issue.message
         }))
+      }
+    });
+  }
+
+  // Handle Mongoose CastError (e.g. invalid ObjectId format)
+  if (err.name === "CastError") {
+    return res.status(400).json({
+      error: {
+        code: "INVALID_IDENTIFIER",
+        message: `Invalid format for identifier '${err.value}'`
       }
     });
   }

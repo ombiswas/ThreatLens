@@ -19,9 +19,15 @@ export async function getNotificationsHandler(req, res) {
     filter["readBy.user"] = { $ne: user._id };
   }
 
-  const [total, rawList] = await Promise.all([
+  const unreadFilter = {
+    $or: [{ targetRoles: user.role }, { targetUser: user._id }],
+    "readBy.user": { $ne: user._id }
+  };
+
+  const [total, rawList, unreadCount] = await Promise.all([
     Notification.countDocuments(filter),
-    Notification.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean()
+    Notification.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    Notification.countDocuments(unreadFilter)
   ]);
 
   const notifications = rawList.map((item) => ({
@@ -33,6 +39,7 @@ export async function getNotificationsHandler(req, res) {
     status: "success",
     data: {
       notifications,
+      unreadCount,
       pagination: {
         total,
         page,

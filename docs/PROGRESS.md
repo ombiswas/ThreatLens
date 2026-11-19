@@ -16,7 +16,7 @@
 | **Phase 8** | Client foundation & UI shell | Done | 2026-11-18 | React Router, TanStack Query, Auth context & session restore, Axios interceptors with 401 handling, cold-start banner, accessible shared UI library (Button, Input, Select, Badge, Card, Table, Modal, ConfirmDialog, Tabs, Skeleton, States), dark SOC layout with Ember Studio design tokens, Vercel CSP security headers, 28 Vitest tests, live dev server + API verification |
 | **Phase 9** | SOC dashboard & incident triage UI | Done | 2026-11-19 | Summary KPI cards, Recharts timeline & distributions, top attack sources table, live Socket.IO stream panel (pause/resume, 50-item cap, batch updates), searchable/filterable/sortable incidents table with URL-synced params, incident forensic detail modal with explainable threat score breakdown & factor conservation, status transitions, investigation notes, safe CSV export, 45 tests |
 | **Phase 10** | Datasets, baseline comparison & admin UI | Done | 2026-11-19 | Drag-and-drop CSV upload with client-side header validation, progress tracking, controlled replay console with live socket progress, comparative evaluation (ML vs Heuristic Baseline, Recharts per-class metrics, confusion matrix heatmap, discrepancy explorer, honest limitations), admin user management (RBAC controls, self-demotion safeguards), security audit trail viewer, live notifications bell with unread badge |
-| **Phase 11** | Testing & security hardening | Not started | TBD | End-to-end integration tests, security checklist audit, dependency audit |
+| **Phase 11** | Testing & security hardening | Done | 2026-11-19 | Comprehensive route-by-route security review, pip-audit (0 CVEs) & npm audit, weak secret rejection in production, CastError 400 mapping, CORS 403 mapping, replay cleanup on dataset deletion, MongoDB compound index optimization with IXSCAN explain verification, axe-core a11y suite (0 violations), 200 passing tests across monorepo |
 | **Phase 12** | Production packaging & deployment | Not started | TBD | Dockerfile, Render/Vercel/HuggingFace configurations |
 | **Phase 13** | Final documentation & viva defense prep | Not started | TBD | Comprehensive project report, presentation guide, viva demo script |
 
@@ -302,3 +302,38 @@
     - Verified `GET /api/audit-logs`: Recorded compliance events (`ROLE_CHANGE`, `DATASET_UPLOAD`, `REGISTER`).
     - Verified `GET /api/notifications`: 20 alerts recorded.
     - Clean teardown with graceful socket and server closure.
+
+### Session 13 - 2026-11-19
+- **Goal:** Phase 11 Quality and Security Audit across the entire repository.
+- **Files Added/Changed:**
+  - `server/src/config/env.js`: Strengthened `validateEnvConfig` to strictly reject weak/placeholder secrets (`super_secret_jwt_key_...`, `changeme`) and require `ADMIN_EMAIL` and `ADMIN_PASSWORD` (min 12 chars) when `NODE_ENV === "production"`.
+  - `server/src/middlewares/errorHandler.js`: Added explicit handling for Mongoose `CastError` returning HTTP 400 Bad Request with code `INVALID_IDENTIFIER`, and CORS rejections mapped to HTTP 403 Forbidden with code `CORS_FORBIDDEN`.
+  - `server/src/utils/logger.js`: Enhanced redaction list to include `passwordHash` and `*.passwordHash`.
+  - `server/src/services/replayService.js`: Exported `stopReplaysForDataset(datasetId)` to abort background replay timers when their associated dataset is removed.
+  - `server/src/services/datasetService.js`: Hooked `stopReplaysForDataset` into dataset deletion lifecycle to prevent orphaned socket emissions.
+  - `server/src/controllers/notificationController.js`: Enhanced `GET /api/notifications` response to return accurate `unreadCount` scalar.
+  - `server/src/models/Incident.js`: Added compound indexes `{ riskLevel: 1, detectedAt: -1 }` and `{ mlClass: 1, detectedAt: -1 }` for high-throughput SOC queries.
+  - `server/src/models/AuditLog.js`: Added compound index `{ action: 1, timestamp: -1 }`.
+  - `server/src/models/Notification.js`: Added compound indexes `{ targetRoles: 1, createdAt: -1 }` and `{ targetUser: 1, createdAt: -1 }`.
+  - `server/scripts/verifyExplainPlans.js`: Standalone index execution plan verification script confirming `IXSCAN` without in-memory `SORT`.
+  - `server/tests/securityAudit.test.js`: 10 comprehensive security regression and end-to-end integration tests (weak secret rejection, CastError 400, CORS 403, duplicate replay 409, replay stopping on dataset deletion, notification unreadCount, DB readyState 503, 404 handler, and full operator E2E lifecycle: register -> promote -> upload -> triage -> note -> export -> evaluation -> audit log).
+  - `client/src/tests/a11y.test.jsx`: Automated accessibility suite using `@axe-core/react` / `vitest-axe` validating zero accessibility violations across Button, Input, Select, Badge, Card, EmptyState, Table, Modal, and ConfirmDialog.
+  - `docs/SECURITY_REVIEW.md`: Detailed audit report containing route-by-route audit table, dependency vulnerability analysis, explain plan metrics, test summaries, and honest residual risk appraisal.
+  - `docs/DECISIONS.md`: Added ADR-017 on security hardening, production configuration guards, and query index optimization.
+- **Tests & Verification:**
+  - `uv run pip-audit` in `ml-service`: 0 vulnerabilities detected.
+  - `uv run pip-audit` in `ml-training`: 0 vulnerabilities detected.
+  - `npm audit` in `server/`: 0 critical/high runtime vulnerabilities (vitest runner devDependency documented).
+  - `npm audit` in `client/`: 0 critical runtime vulnerabilities (react-router SSR hydration advisory non-applicable to client-rendered SPA).
+  - Secret scanning: Git history and source code clean; 0 credentials or private keys leaked.
+  - Automated Accessibility (`axe-core` in client): 6 test suites passed, 0 violations.
+  - MongoDB Explain Plans: Confirmed `IXSCAN` on `riskLevel_1_detectedAt_-1` and `status_1_riskLevel_1_detectedAt_-1` with `FETCH` stage and 0 in-memory sorting.
+  - Full-stack test suite:
+    - `server`: 14 test files, 110 passed (100%).
+    - `client`: 10 test files, 71 passed (100%).
+    - `ml-service`: 1 test file, 9 passed (100%).
+    - `ml-training`: 2 test files, 10 passed (100%).
+    - **Total Monorepo Tests:** 27 test files, 200 passed (100% pass rate).
+  - ESLint: 0 errors, 0 warnings across `server/` and `client/`.
+  - Client Build: `vite build` completed successfully, 314 kB gzip production bundle.
+

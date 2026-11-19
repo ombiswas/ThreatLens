@@ -70,8 +70,8 @@ describe("Server Infrastructure & Health Endpoints", () => {
     const res = await request(app)
       .get("/api/health")
       .set("Origin", "http://malicious-attacker.com");
-    expect(res.status).toBe(500);
-    expect(res.body.error.code).toBe("INTERNAL_SERVER_ERROR");
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("CORS_FORBIDDEN");
   });
 
   it("CORS permits allowed CLIENT_URL Origin", async () => {

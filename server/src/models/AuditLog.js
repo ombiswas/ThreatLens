@@ -45,7 +45,9 @@ const auditLogSchema = new mongoose.Schema(
   }
 );
 
-// Optional retention policy TTL index: auto-expire audit logs after 90 days (7,776,000 seconds)
+// Retention policy TTL index: auto-expire audit logs after 90 days (7,776,000 seconds)
 auditLogSchema.index({ timestamp: 1 }, { expireAfterSeconds: 90 * 24 * 60 * 60 });
+// Compound index for filtering audit logs by action and sorting chronologically
+auditLogSchema.index({ action: 1, timestamp: -1 });
 
 export const AuditLog = mongoose.model("AuditLog", auditLogSchema);
