@@ -13,7 +13,7 @@
 | **Phase 5** | Threat detection & scoring core | Done | 2026-11-18 | mlClient (retries, timeout, 503 fallback), scoringService (0-100 score, Benign=0, factor sum conservation), baselineService, detectionService, POST /api/detect, 28 new tests, live end-to-end verified |
 | **Phase 6** | Incidents & datasets management | Done | 2026-11-18 | Incident persistence, CSV upload & streaming validation, formula-injection-safe CSV export, 78 tests |
 | **Phase 7** | Realtime telemetry & evaluation stats | Done | 2026-11-18 | Socket.IO telemetry, Replay engine, aggregation stats, comparative evaluation, critical alerts, 100 tests |
-| **Phase 8** | Client foundation & UI shell | Not started | TBD | Layout, auth state, protected routing, dark SOC theme |
+| **Phase 8** | Client foundation & UI shell | Done | 2026-11-18 | React Router, TanStack Query, Auth context & session restore, Axios interceptors with 401 handling, cold-start banner, accessible shared UI library (Button, Input, Select, Badge, Card, Table, Modal, ConfirmDialog, Tabs, Skeleton, States), dark SOC layout with Ember Studio design tokens, Vercel CSP security headers, 28 Vitest tests, live dev server + API verification |
 | **Phase 9** | SOC dashboard & incident triage UI | Not started | TBD | Live stream feeds, threat score charts, incident table & detail modal |
 | **Phase 10** | Datasets, baseline comparison & admin UI | Not started | TBD | CSV upload manager, ML vs baseline comparison visualizer, users list |
 | **Phase 11** | Testing & security hardening | Not started | TBD | End-to-end integration tests, security checklist audit, dependency audit |
@@ -177,3 +177,49 @@
     - Verified `GET /api/stats/*` aggregation summaries, distributions, and top sources.
     - Verified `GET /api/evaluation/latest` and `GET /api/evaluation/dataset/demo` comparative metrics.
     - Cleanly stopped replay and shutdown test server.
+
+### Session 10 - 2026-11-18
+- **Goal:** Phase 8 Client Foundation, UI Shell, Design System, Accessible Components, Auth & Routing in `client/`.
+- **Files Added/Changed:**
+  - `client/package.json` & `package-lock.json`: Added `axios`, `@tanstack/react-query`, `zod`, `react-hook-form`, `@hookform/resolvers`, `vitest@3.2.7`, `jsdom`, `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`.
+  - `client/tailwind.config.js`: Integrated Ember Studio warm craft aesthetics into a Dark SOC palette (`brand.primary` #c2410c terracotta, `brand.hover` #9a3412, `brand.accent` #f59e0b, `soc.dark` #0c0a09, `soc.surface` #171514, `soc.raised` #262220, `soc.border` #383431, and multi-modal risk color tokens with high-contrast borders and backgrounds).
+  - `client/index.html`: Added preconnected Google Fonts (`Source Sans 3`, `Playfair Display`, `Fira Code`) and dark SOC body styles.
+  - `client/src/index.css`: Custom subtle scrollbars and base typography styles.
+  - `client/vercel.json`: Hardened deployment security headers (`Content-Security-Policy` with restrictive origins and no unsafe-eval, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`, client rewrite rule).
+  - `client/src/utils/env.js`: Startup validation of `VITE_API_URL` and `VITE_APP_ENV` via Zod with fail-fast semantics.
+  - `client/src/utils/cn.js`: `clsx` and `tailwind-merge` class name utility.
+  - `client/src/services/api.js`: Axios client with base URL from `env.VITE_API_URL`, 15s timeout, in-memory + sessionStorage token synchronization, request token attachment, response unwrap of standard JSend envelopes, 401 automatic token purge and subscriber notification, error normalization into `{ code, message, details, status }`, and >4s slow request cold-start detector.
+  - `client/src/services/socket.js`: Authenticated Socket.IO connection manager with JWT handshake passing, connection lifecycle status tracker, and auto-reconnect handling.
+  - `client/src/context/ToastContext.jsx` & `toastContextDef.js` & `client/src/hooks/useToast.js`: Accessible floating toast alert manager with auto-dismiss, ARIA roles, and top-of-viewport glowing cold-start wake-up banner.
+  - `client/src/features/auth/authSchemas.js`: Client-side Zod validation schemas strictly mirroring backend rules (password policy: min 10 chars, uppercase, lowercase, numeric, symbol, not identical to email).
+  - `client/src/features/auth/AuthContext.jsx` & `authContextDef.js` & `useAuth.js`: Authentication state provider managing `user`, `token`, `isAuthenticated`, `login`, `register`, `logout`, and automatic session restoration on boot via `GET /api/auth/me`.
+  - `client/src/features/auth/ProtectedRoute.jsx` & `RoleRoute.jsx`: Client route security guards with accessible loading states and 403 Access Denied elevation screens.
+  - `client/src/features/auth/LoginPage.jsx`: React Hook Form login screen with password reveal toggle, error alerts, demo credential quick-fill reference, and redirect handling.
+  - `client/src/features/auth/RegisterPage.jsx`: Registration screen with realtime password policy checklist and Viewer role assignment notice.
+  - `client/src/components/ui/Button.jsx`: Accessible button with variants (`primary`, `secondary`, `ghost`, `danger`, `outline`), sizes, loading state with spinner, and focus rings.
+  - `client/src/components/ui/Input.jsx` & `Select.jsx`: Accessible form controls with labels, helper text, error alerts, adornments, and ARIA attributes.
+  - `client/src/components/ui/Badge.jsx`: Multi-modal `RiskBadge` (Critical, High, Medium, Low using distinct Lucide icons, text labels, and semantic borders), `StatusBadge`, `AttackClassBadge`, and `RoleBadge`.
+  - `client/src/components/ui/Card.jsx`: Surface card container with header, title, description, content, footer, hover elevation, and left accent border stripes.
+  - `client/src/components/ui/Table.jsx`: Accessible table with sortable column headers (`aria-sort`, chevron indicators), pagination controls, loading pulse skeleton rows, and empty state.
+  - `client/src/components/ui/Modal.jsx` & `ConfirmDialog.jsx`: Accessible dialog modals with body scroll lock, Escape key dismiss, backdrop blur, and focus management.
+  - `client/src/components/ui/Tabs.jsx`: Accessible tabs with keyboard arrow navigation (`role="tablist"`, `aria-selected`), badges, and panels.
+  - `client/src/components/ui/Skeleton.jsx`, `EmptyState.jsx`, `ErrorState.jsx`: Clean state feedback components.
+  - `client/src/components/ui/ErrorBoundary.jsx`: Global runtime error boundary with reload action and safe error display.
+  - `client/src/components/layout/AppLayout.jsx`, `Sidebar.jsx`, `TopBar.jsx`, `NotFoundPage.jsx`: Full SOC layout shell with responsive collapsible mobile drawer, live Socket telemetry status pill, security alerts dropdown, user profile menu, and 404 handler.
+  - `client/src/app/router.jsx`: React Router v6 setup with public auth routes, protected SOC routes, role-guarded routes, and placeholder feature pages for `/dashboard`, `/incidents`, `/datasets`, `/evaluation`, `/detect`, `/admin/users`, `/admin/audit-logs`.
+  - `client/src/App.jsx`: Root provider integration (`ErrorBoundary`, `QueryClientProvider`, `ToastProvider`, `AuthProvider`, `RouterProvider`).
+  - `client/src/tests/`: Vitest + Testing Library test suite (setup, api interceptor tests, shared component accessibility tests, auth page validation tests, route guard protection tests).
+  - `server/src/scripts/verifyPhase8Client.js`: Real integration verification script running in-memory MongoDB, seeding admin, starting Express API, starting Vite dev server, and testing login & session recovery.
+  - `docs/DECISIONS.md`: Added ADR-013 (Ember Studio Dark SOC Aesthetics & Multi-Modal Risk Tokens) and ADR-014 (Client State Partitioning).
+- **Tests & Verification:**
+  - `npm run format`: Prettier cleanly verified and formatted (0 errors).
+  - `npm run lint`: ESLint 0 errors, 0 warnings.
+  - `npm test`: 28 passed across 4 test suites in 2.25s (api, components, routes, auth).
+  - `npm run build`: Production bundle built cleanly with Vite in 5.53s.
+  - Real dev server & API check (`verifyPhase8Client.js`):
+    - Started in-memory MongoDB and seeded admin account (`admin@cybershield.local`).
+    - Started Express server on port 5058 and Vite dev server on port 5173.
+    - Probed `http://127.0.0.1:5173`: HTTP 200 OK, confirmed `AI CyberShield SOC` title.
+    - Executed login request against real API with admin credentials: HTTP 200 OK, received JWT token and user identity `admin@cybershield.local` (`admin` role).
+    - Verified `GET /api/auth/me` with Bearer token: HTTP 200 OK, session restored.
+    - Verified invalid credentials rejection: HTTP 401 with standard error envelope.

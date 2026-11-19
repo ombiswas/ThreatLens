@@ -54,7 +54,10 @@ The following controls are enforced throughout design, development, and deployme
 - [x] Safe 503 fallback handling (`ServiceUnavailableError`) with zero credential or internal URL leakage.
 
 ### Frontend Security
-- [ ] Zero usage of `dangerouslySetInnerHTML`.
-- [ ] Content escaped by React JSX compiler by default.
-- [ ] Tokens and credentials never exposed in URL query parameters.
-- [ ] Content Security Policy (CSP) and security headers configured for web deployment.
+- [x] Zero usage of `dangerouslySetInnerHTML`.
+- [x] Content escaped by React JSX compiler by default.
+- [x] Tokens and credentials never exposed in URL query parameters.
+- [x] Content Security Policy (CSP), `X-Frame-Options: DENY`, `frame-ancestors 'none'`, and security headers configured for web deployment in `client/vercel.json`.
+- [x] Fail-fast startup environment validation via Zod (`client/src/utils/env.js`).
+- [x] In-memory access token storage with `sessionStorage` fallback, immediately wiped on logout and 401 unauthorization.
+- [x] Accessible multi-modal threat indicators (icons + labels + contrast borders) ensuring no reliance on color perception alone.

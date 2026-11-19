@@ -1,33 +1,29 @@
 # NEXT STEPS
 
-## Current Goal: Phase 8 - Client Foundation & UI Shell in `client/`
+## Current Goal: Phase 9 - SOC Dashboard & Incident Triage UI in `client/`
 
-Phases 0 through 7 are verified and completed. The entire backend foundation, offline training, inference microservice, detection engine, incident store, streaming dataset parser, Socket.IO telemetry, replay engine, stats aggregations, comparative evaluation, and in-app alerting are fully operational and verified with 100 passing tests.
+Phases 0 through 8 are fully verified and completed. The client foundation, routing, authentication state, dark SOC theme tokens (harmonizing Ember Studio craft aesthetics), accessible shared component library, Vercel security headers, and dev server integration against the real seeded API are verified with 28 passing client tests.
 
-### Phase 8 Checklist
-- [ ] Client Architecture & Routing (`client/src/`):
-  - React Router configuration with public routes (`/login`, `/register`), protected routes, and role-guarded routes (`admin` only).
-  - Clean feature-based organization: `src/features/{auth,dashboard,incidents,datasets,evaluation,admin}`, `src/components`, `src/hooks`, `src/services`, `src/utils`.
-- [ ] Authentication Context & State (`client/src/features/auth/`):
-  - In-memory JWT access token management.
-  - Automatic session restoration via `GET /api/auth/me`.
-  - Login, register, and logout flows with client-side token discard and redirect handling.
-  - Role-based route guards (`RequireAuth`, `RequireRole`).
-- [ ] Dark SOC UI Shell & Layout (`client/src/components/layout/`):
-  - Persistent Dark SOC theme using Tailwind CSS (slate/zinc palette with cyan/emerald telemetry accents and amber/rose threat badges).
-  - Navigation sidebar with active state styling and role-aware navigation links (Dashboard, Live Incidents, Datasets & Replay, ML vs Baseline Evaluation, Admin Users).
-  - Top header with system health pill, active socket connection status badge, live notification drawer/dropdown, and user profile/logout menu.
-- [ ] Socket.IO Client Integration (`client/src/services/socket.js`, `client/src/hooks/useSocket.js`):
-  - Authenticated Socket.IO connection manager using in-memory JWT in handshake auth.
-  - Automatic reconnection, clean disconnect on logout, and event subscription hooks.
-  - Global real-time audio/visual alert trigger for `notification:new` and `incident:new`.
-- [ ] API Client & Error Handling (`client/src/services/api.js`):
-  - Axios or native fetch wrapper injecting `Authorization: Bearer <token>`.
-  - Automatic 401 handling (clears auth state and redirects to login).
-  - Standardized error extraction matching `{ error: { code, message, details } }`.
+### Phase 9 Checklist
+- [ ] SOC Telemetry & Real-Time Stats Dashboard (`client/src/features/dashboard/`):
+  - Summary KPI cards powered by `GET /api/stats/summary`: Total flows monitored, attack ratio, active incident count, critical threats.
+  - Time-series threat activity chart using Recharts (`GET /api/stats/timeline`): Minute/hour buckets with stacked area/line breakdown across DoS/DDoS, PortScan, BruteForce, and average threat score.
+  - Multi-faceted distribution donuts/bars (`GET /api/stats/distribution`): Classification breakdown, risk severity distribution, incident triage status.
+  - Top attacked/attacking IP tables with role-masked addresses (`GET /api/stats/top-sources`).
+  - Real-time live flow feed hook subscribing to Socket.IO `incident:new` and appending latest incidents with flash animations.
+- [ ] Incident Triage & Forensics Management (`client/src/features/incidents/`):
+  - Paginated, filterable incident data table (`GET /api/incidents`): Filter by risk level (Critical, High, Medium, Low), ML class, and status (New, Under Review, Resolved).
+  - Search and sortable columns (detected timestamp, threat score, attack class, source/destination IP, protocol).
+  - Incident Detail Modal: Full 67-feature inspection, transparent threat score breakdown (base class severity weight + confidence factor = total score), ML vs Heuristic baseline comparison, and analyst investigation notes history.
+  - Incident Status Transition controls (`PATCH /api/incidents/:id/status`): Validated state transitions (`New` -> `Under Review` -> `Resolved`) restricted to Analyst and Admin roles.
+  - Investigation Note creation (`POST /api/incidents/:id/notes`): Length-limited note submission with analyst attribution.
+  - Formula-injection-safe CSV Export button (`GET /api/incidents/export`).
+- [ ] Real-time Interactive Flow Detection Playground (`client/src/features/dashboard/DetectPage.jsx`):
+  - Single flow feature inspection form with presets (e.g. sample DoS flow, PortScan flow, Benign flow from `demo_flows.csv`).
+  - Submission to `POST /api/detect` with real-time classification response, transparent 0-100 score visualizer, and baseline heuristic comparison.
 - [ ] Verification:
-  - Run linting (`npm run lint`), format check, and production build (`npm run build`).
-  - Verify responsive UI layout in browser and test authenticated navigation flow.
+  - Run `npm run lint`, `npm run format`, `npm test`, and `npm run build` in `client/`.
+  - Verify real Socket.IO live flow emissions and status transition persistence against the live server.
 
 ### Open Questions
 - None.

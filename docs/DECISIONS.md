@@ -109,3 +109,21 @@
 - **Reason:** Critical attacks (e.g. volumetric DoS or active brute-force) require immediate SOC awareness. In-app alerts provide zero-dependency real-time alerting, while external email provides out-of-band notification. Rate-limiting prevents mailbox flooding during intense replay sessions.
 - **Alternatives Considered:**
   - Sending an email for every single critical flow: Results in hundreds of emails during attack replays, rapidly exhausting provider quotas and causing alert fatigue.
+
+## ADR-013: Ember Studio Dark SOC Aesthetics & Multi-Modal Risk Tokens
+- **Date:** 2026-11-18
+- **Status:** Accepted
+- **Decision:** Synthesize the warm craft palette of Ember Studio (`docs/DESIGN.md`) with a professional Security Operations Center (SOC) dark interface. Risk severity bands (`Critical`, `High`, `Medium`, `Low`) must be distinguishable without relying on color perception alone: each token incorporates an explicit semantic icon (`ShieldAlert`, `Flame`, `AlertTriangle`, `ShieldCheck`), a clear text label, distinct border contrast, and background tints. Technical values (IP addresses, ports, timestamps, percentages) strictly utilize monospace typography (`Fira Code`).
+- **Reason:** Standard SOC templates often suffer from dark-mode fatigue, illegible neon gradients, or inaccessible color-only alert indicators. The warm terracotta and stone palette creates a distinctive, accessible, and fatigue-resistant operator environment while satisfying WCAG 2.1 AA accessibility guidelines.
+- **Alternatives Considered:**
+  - Generic cyber neon-green / dark-blue theme: Low readability, common template feel, poor contrast.
+  - Color-only badges without icons or labels: Fails accessibility requirements for color-blind analysts.
+
+## ADR-014: Client State Partitioning (TanStack Query + Auth React Context)
+- **Date:** 2026-11-18
+- **Status:** Accepted
+- **Decision:** Partition client state into server cache (managed by `@tanstack/react-query`) and local session state (managed by lightweight React Context for `AuthContext` and `ToastContext`). Access tokens are kept in memory with `sessionStorage` fallback for tab reloads, and immediately wiped upon logout or receiving a `401 Unauthorized` response.
+- **Reason:** Eliminates heavy global state management libraries (Redux, Zustand) for a focused application. TanStack Query provides out-of-the-box caching, deduplication, and background refetching for remote REST data, while React Context handles synchronous user identity and UI notifications cleanly.
+- **Alternatives Considered:**
+  - Redux Toolkit: Excessive boilerplate for a clean 6-view application.
+  - Storing JWT in `localStorage`: High XSS vulnerability window compared to memory + `sessionStorage`.

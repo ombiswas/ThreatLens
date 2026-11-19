@@ -5,3 +5,35 @@
 :root {
   color-scheme: dark;
 }
+
+body {
+  margin: 0;
+  background-color: #0c0a09;
+  color: #f5f5f4;
+  font-family:
+    "Source Sans 3",
+    system-ui,
+    -apple-system,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom subtle scrollbars for SOC dark aesthetic */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #171514;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #383431;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #57534e;
+}
