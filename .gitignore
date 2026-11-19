@@ -32,8 +32,12 @@ build/
 data/raw/
 data/processed/
 ml-training/data/
-ml-service/models/*.joblib
-!ml-service/models/.gitkeep
+
+# Allow compact trained model artifacts (< 1MB) required for CI and deployment
+!ml-service/artifacts/model.joblib
+!ml-service/artifacts/preprocessor.joblib
+!ml-training/artifacts/model.joblib
+!ml-training/artifacts/preprocessor.joblib
 
 # Allow demo flow sample under 1MB if present
 !ml-training/sample/
