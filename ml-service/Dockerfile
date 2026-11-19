@@ -1,32 +1,32 @@
 # Slim Python 3.11 base image
 FROM python:3.11-slim-bookworm
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PORT=7860 \
-    PATH="/app/.venv/bin:$PATH"
-
 # Install uv from official pinned multi-arch image
 COPY --from=ghcr.io/astral-sh/uv:0.11 /uv /bin/uv
 
-# Create non-root system user for secure Hugging Face Spaces runtime
-RUN useradd -m -u 1000 appuser
+# Create non-root system user (UID 1000 required by Hugging Face Spaces)
+RUN useradd -m -u 1000 user
 
-WORKDIR /app
+ENV HOME=/home/user \
+    PATH="/home/user/app/.venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PORT=7860
 
-# Copy dependency configuration files first for Docker layer caching
-COPY --chown=appuser:appuser pyproject.toml uv.lock .python-version ./
+WORKDIR $HOME/app
+
+# Copy dependency configuration files
+COPY --chown=user:user pyproject.toml uv.lock .python-version ./
+
+# Switch to non-root user before installation so venv and caches are user-owned
+USER user
 
 # Install dependencies strictly matching uv.lock without project installation
 RUN uv sync --frozen --no-dev --no-install-project
 
 # Copy application source code and verified model artifacts
-COPY --chown=appuser:appuser app/ ./app/
-COPY --chown=appuser:appuser artifacts/ ./artifacts/
-
-# Switch to unprivileged non-root user
-USER appuser
+COPY --chown=user:user app/ ./app/
+COPY --chown=user:user artifacts/ ./artifacts/
 
 # Expose default Hugging Face Spaces port (7860)
 EXPOSE 7860

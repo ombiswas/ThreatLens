@@ -8,6 +8,7 @@ on:
 
 jobs:
   server:
+    name: Backend Server (Node.js 22)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,11 +22,10 @@ jobs:
       - name: Lint
         run: cd server && npm run lint
       - name: Test
-        run: |
-          cd server
-          npm test --if-present
+        run: cd server && npm test
 
   client:
+    name: Frontend Client (Vite + React)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,10 +38,16 @@ jobs:
         run: cd client && npm ci
       - name: Lint
         run: cd client && npm run lint
+      - name: Test
+        run: cd client && npm test
       - name: Build
+        env:
+          VITE_API_URL: http://localhost:5000
+          VITE_APP_ENV: production
         run: cd client && npm run build
 
   ml-service:
+    name: ML Inference Microservice (FastAPI + uv)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -56,10 +62,22 @@ jobs:
       - name: Lint
         run: cd ml-service && uv run ruff check .
       - name: Test
-        run: |
-          cd ml-service
-          if [ -d "tests" ] && [ "$(ls -A tests/*.py 2>/dev/null)" ]; then
-            uv run pytest
-          else
-            echo "No test files present yet, skipping pytest."
-          fi
+        run: cd ml-service && uv run pytest
+
+  ml-training:
+    name: ML Training Pipeline (Python 3.11 + uv)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          enable-cache: true
+      - name: Set up Python
+        run: uv python install 3.11
+      - name: Install dependencies
+        run: cd ml-training && uv sync --frozen
+      - name: Lint
+        run: cd ml-training && uv run ruff check .
+      - name: Test
+        run: cd ml-training && uv run pytest

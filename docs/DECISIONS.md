@@ -161,3 +161,18 @@
   - Allowing weak default secrets with runtime warnings: High operational risk of misconfigured deployments exposing the entire system in production.
   - Runtime sort operations without compound indexes: High database latency and memory exhaustion when querying incidents across 20,000+ flow records.
 
+## ADR-018: Free-Tier Multi-Cloud Deployment Architecture
+- **Date:** 2026-11-19
+- **Status:** Accepted
+- **Decision:** Deploy the application across a decoupled multi-cloud architecture using exclusively free-tier services:
+  1. Frontend Client: Vercel Edge CDN for static Single Page Application hosting with SPA routing rewrite and CSP security headers.
+  2. Backend API: Render Free Web Service (Node.js 22 LTS) with automatic admin provisioning, `render.yaml` blueprint specification, and dynamic outbound IP access configured on MongoDB.
+  3. Machine Learning Microservice: Hugging Face Spaces Docker runtime running uv-managed FastAPI under non-root UID 1000 on port 7860.
+  4. Database: MongoDB Atlas M0 Free Tier (512MB shared) with least-privilege `cybershield_app` user and manual production index initialization via `ensureIndexes.js`.
+  5. Cold-Start Mitigation: UptimeRobot 5-minute HTTP keep-alive monitoring and a 4.0-second client-side wake-up banner in React.
+- **Reason:** Satisfies the zero-cost requirement of an educational B.Tech major project while demonstrating production-grade separation of concerns: heavy ML inference is decoupled from the Node.js API server, and static UI assets are served globally from edge nodes.
+- **Alternatives Considered:**
+  - Monolithic single-server deployment on a single free VPS: Free VPS instances (e.g. Oracle Cloud Free Tier) are difficult to obtain, have variable availability, and do not provide automated edge CDN or managed DB failover.
+  - Containerizing the full stack together in Docker Compose: Cannot run on Vercel or Render free web service tiers without requiring paid container hosting.
+
+

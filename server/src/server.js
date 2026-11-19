@@ -4,11 +4,21 @@ import { env } from "./config/env.js";
 import { connectDB, disconnectDB } from "./config/db.js";
 import { initSocketServer } from "./sockets/socketManager.js";
 import { stopAllReplays } from "./services/replayService.js";
+import { seedAdmin } from "./scripts/seedAdmin.js";
 import { logger } from "./utils/logger.js";
 
 async function startServer() {
   // Connect to Database
   await connectDB(env.MONGO_URI);
+
+  // Automatically provision system administrator in production if credentials provided
+  if (env.ADMIN_EMAIL && env.ADMIN_PASSWORD) {
+    try {
+      await seedAdmin();
+    } catch (err) {
+      logger.warn({ msg: "Automatic admin seed warning", error: err.message });
+    }
+  }
 
   const app = createApp();
   const server = http.createServer(app);

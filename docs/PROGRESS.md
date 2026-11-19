@@ -17,7 +17,7 @@
 | **Phase 9** | SOC dashboard & incident triage UI | Done | 2026-11-19 | Summary KPI cards, Recharts timeline & distributions, top attack sources table, live Socket.IO stream panel (pause/resume, 50-item cap, batch updates), searchable/filterable/sortable incidents table with URL-synced params, incident forensic detail modal with explainable threat score breakdown & factor conservation, status transitions, investigation notes, safe CSV export, 45 tests |
 | **Phase 10** | Datasets, baseline comparison & admin UI | Done | 2026-11-19 | Drag-and-drop CSV upload with client-side header validation, progress tracking, controlled replay console with live socket progress, comparative evaluation (ML vs Heuristic Baseline, Recharts per-class metrics, confusion matrix heatmap, discrepancy explorer, honest limitations), admin user management (RBAC controls, self-demotion safeguards), security audit trail viewer, live notifications bell with unread badge |
 | **Phase 11** | Testing & security hardening | Done | 2026-11-19 | Comprehensive route-by-route security review, pip-audit (0 CVEs) & npm audit, weak secret rejection in production, CastError 400 mapping, CORS 403 mapping, replay cleanup on dataset deletion, MongoDB compound index optimization with IXSCAN explain verification, axe-core a11y suite (0 violations), 200 passing tests across monorepo |
-| **Phase 12** | Production packaging & deployment | Not started | TBD | Dockerfile, Render/Vercel/HuggingFace configurations |
+| **Phase 12** | Production packaging & deployment | Done | 2026-11-19 | Production deployment guides (docs/DEPLOYMENT.md), MongoDB Atlas M0 least-privilege setup and index provisioner (ensureIndexes.js), Hugging Face Spaces Dockerfile with uv UID 1000, Render render.yaml and automatic admin boot-seeding, Vercel vercel.json SPA rewrites + CSP, PowerShell post-deploy smoke test script (smokeTest.ps1), CI/CD GitHub Actions workflow |
 | **Phase 13** | Final documentation & viva defense prep | Not started | TBD | Comprehensive project report, presentation guide, viva demo script |
 
 ---
@@ -336,4 +336,26 @@
     - **Total Monorepo Tests:** 27 test files, 200 passed (100% pass rate).
   - ESLint: 0 errors, 0 warnings across `server/` and `client/`.
   - Client Build: `vite build` completed successfully, 314 kB gzip production bundle.
+
+### Session 14 - 2026-11-19
+- **Goal:** Phase 12 Production Packaging, Free-Tier Deployment Configuration & Operational Runbook.
+- **Files Added/Changed:**
+  - `render.yaml`: Infrastructure-as-code blueprint for Render Web Service (Node.js 22 LTS, free plan, automatic 32-byte JWT_SECRET generation, health check path `/api/health`, environment variable mapping).
+  - `.node-version` & `server/.node-version`: Pinned Node.js 22.13.1 for Render and Vercel build runtimes.
+  - `server/src/scripts/ensureIndexes.js`: Dedicated script to synchronize compound indexes across MongoDB Atlas collections with Mongoose `autoIndex: false` in production.
+  - `server/package.json`: Added `"ensure-indexes": "node src/scripts/ensureIndexes.js"` and `"seed-admin": "node src/scripts/seedAdmin.js"`.
+  - `server/src/server.js`: Integrated automatic, idempotent system administrator seeding during server boot when `ADMIN_EMAIL` and `ADMIN_PASSWORD` are configured in production.
+  - `ml-service/Dockerfile`: Hardened for Hugging Face Spaces Docker specifications (UID 1000 `user`, working directory `/home/user/app`, `uv sync --frozen --no-dev --no-install-project` executed as unprivileged user, port 7860 exposed, healthcheck probe).
+  - `client/vercel.json`: Added SPA routing rewrites `/(.*)` -> `/index.html` and CSP `connect-src` allowing `https://*.onrender.com`, `wss://*.onrender.com`, and `https://*.hf.space`.
+  - `scripts/smokeTest.ps1`: Automated post-deployment PowerShell test script exercising API server health, database connectivity, security headers, ML microservice readiness, admin login, and end-to-end threat detection pipeline.
+  - `.github/workflows/ci.yml`: Updated CI workflow executing full test suites, linters, and production build checks across all four monorepo subprojects.
+  - `docs/DEPLOYMENT.md`: Comprehensive production guide detailing MongoDB Atlas M0, Hugging Face Spaces, Render, Vercel, cross-origin wiring, UptimeRobot keep-alive configuration, rollback procedures, and the 10-minute pre-demo drill.
+  - `docs/DECISIONS.md`: Added ADR-018 on free-tier multi-cloud deployment architecture.
+- **Tests & Verification:**
+  - `smokeTest.ps1` syntax validated.
+  - `render.yaml` and `.github/workflows/ci.yml` syntax validated.
+  - `client/vercel.json` verified as valid JSON.
+  - Total ML artifact footprint confirmed at ~78 KB (<50 MB threshold, no Git LFS needed).
+  - Server linter passed with 0 errors.
+
 

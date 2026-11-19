@@ -7,6 +7,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
+    "ensure-indexes": "node src/scripts/ensureIndexes.js",
+    "seed-admin": "node src/scripts/seedAdmin.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --check .",

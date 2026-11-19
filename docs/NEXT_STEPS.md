@@ -1,28 +1,27 @@
 # NEXT STEPS
 
-## Current Goal: Phase 12 - Production Packaging & Deployment
+## Current Goal: Phase 13 - Final Documentation, Viva Defense Prep & Presentation Package
 
-Phases 0 through 11 are completely verified and operational. The full backend, offline ML training, inference microservice, detection engine, incident store, live Socket.IO telemetry, SOC dashboard with Recharts visualizations, throttled live feed, incident management with explainable score factors, status transitions, analyst notes, safe CSV exports, dataset ingestion with drag-and-drop client CSV validation, controlled traffic replay with live socket progress, comparative evaluation (Random Forest vs Heuristic Baseline, confusion matrix, discrepancy analysis, honest limitations), admin user management (RBAC controls, self-demotion safeguards), security audit trail viewer, and real-time notifications have passed exhaustive security review with 200 passing tests across the monorepo, zero accessibility violations (`axe-core`), zero pip-audit vulnerabilities, and zero secret leaks.
+Phases 0 through 12 are completely verified and operational. The full stack (React SPA on Vercel, Node.js 22 Express API on Render, FastAPI ML microservice on Hugging Face Spaces, MongoDB Atlas M0) is packaged and documented in `docs/DEPLOYMENT.md` with infrastructure-as-code configurations (`render.yaml`, `vercel.json`, `ml-service/Dockerfile`), automated CI/CD (`.github/workflows/ci.yml`), automated post-deployment smoke test suite (`scripts/smokeTest.ps1`), 200 passing tests across the monorepo, zero accessibility violations (`axe-core`), zero pip-audit vulnerabilities, and zero secret leaks.
 
-### Phase 12 Checklist
-- [ ] Containerization & Service Packaging:
-  - Verify and optimize Dockerfiles for `ml-service` (Hugging Face Spaces Docker runtime with uv frozen lock).
-  - Prepare Dockerfile / Render configuration for `server/` (Node.js 22 LTS, production dependencies, environment variables).
-  - Configure `client/` for Vercel deployment (static build output, routing rewrite rules for SPA, security headers).
-- [ ] Environment Configuration & Health Verification:
-  - Document deployment guide with exact environment variable requirements for all three hosted services.
-  - Setup and verify production readiness probes (`/api/health`, `/health`).
-  - Configure CORS origins and WebSocket client connection URLs for cross-domain free-tier environments.
-- [ ] Staging / Production Smoke Testing:
-  - Deploy ml-service to Hugging Face Spaces.
-  - Deploy server to Render (connected to MongoDB Atlas M0).
-  - Deploy client to Vercel.
-  - Perform live smoke test across production URLs: seed admin, log in, ingest test flow sample, execute replay, verify dashboard and evaluation metrics.
-- [ ] Phase 13 Preparation:
-  - Structure viva presentation defense guide, architecture diagrams, and academic project report.
+### Phase 13 Checklist
+- [ ] Comprehensive Project Report (`docs/PROJECT_REPORT.md`):
+  - Abstract, Problem Statement, System Architecture, and Methodology.
+  - Machine Learning Pipeline: CIC-IDS2017 dataset exploration, feature selection, data leakage prevention, Random Forest model training, comparative evaluation vs Rule-Based heuristic baseline.
+  - Threat Scoring Engine: Formula derivation, 0-100 normalization, mathematical factor conservation proof, and risk band classification.
+  - SOC Dashboard & Frontend: Architecture, real-time Socket.IO telemetry, Recharts data visualization, throttled live feed, WCAG 2.1 AA accessibility compliance.
+  - Security & Defensive Engineering: Threat modeling, authentication, RBAC, input sanitization, formula injection protection, rate limiting, and audit logging.
+  - Results & Discussion: Quantitative metrics (ML vs Baseline accuracy, precision, recall, F1, confusion matrix, latency benchmarks).
+  - Limitations & Future Scope: Realistic appraisal of offline NetFlow constraints, adversarial evasion, and streaming scalability.
+- [ ] Viva Defense & Presentation Guide (`docs/VIVA_GUIDE.md`):
+  - Anticipated committee questions & rigorous technical answers (model choices, why Random Forest over Deep Learning, feature leakage traps, score explainability, free-tier deployment trade-offs).
+  - Live Demonstration Script (Step-by-step 5-minute presentation flow: login -> dashboard overview -> dataset upload -> live traffic replay -> incident triage & status transition -> comparative evaluation defense).
+  - Architecture Diagrams & Presentation Slides outline.
+- [ ] Code Polish & Repository Readme:
+  - Update root `README.md` with project badges, architecture diagram, local setup, deployment links, and project team credits (Dev Bhoomi Uttarakhand University).
 
 ### Open Questions
 - None.
 
 ### Known Issues
-- Free-tier hosts (Render, Hugging Face Spaces) spin down on inactivity (cold start ~30-50s); client 4-second wake-up detector and backend MLClient 3-retry exponential backoff provide smooth recovery.
+- None tracked. Free-tier cold starts on Render and Hugging Face are documented and mitigated with UptimeRobot 5-minute keep-alive pings and frontend wake-up banner.
