@@ -122,7 +122,7 @@ describe("Flow Detection Feature (DetectPage)", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Analysis Error")).toBeInTheDocument();
-      expect(screen.getByText("FastAPI ML service unavailable")).toBeInTheDocument();
+      expect(screen.getAllByText("FastAPI ML service unavailable").length).toBeGreaterThanOrEqual(1);
       expect(screen.getByRole("button", { name: /retry analysis/i })).toBeInTheDocument();
     });
   });

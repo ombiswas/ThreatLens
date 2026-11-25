@@ -19,9 +19,9 @@ export function ToastProvider({ children }) {
   }, []);
 
   const addToast = useCallback(
-    ({ type = "info", title, message, duration = 5000 }) => {
+    ({ type = "info", title, message, description, duration = 5000 }) => {
       const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-      const newToast = { id, type, title, message };
+      const newToast = { id, type, title, message: message || description };
 
       setToasts((prev) => [...prev, newToast]);
 
@@ -51,6 +51,14 @@ export function ToastProvider({ children }) {
             Server is waking up from idle state (free-tier spin-up). First response may take 10-30s.
             Please wait...
           </span>
+          <button
+            type="button"
+            onClick={() => setIsServerWaking(false)}
+            className="ml-3 rounded p-0.5 text-white/80 transition-colors hover:bg-white/20 hover:text-white"
+            aria-label="Dismiss banner"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
         </aside>
       )}
 

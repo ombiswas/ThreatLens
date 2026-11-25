@@ -158,6 +158,21 @@ describe("Admin Console Features (Phase 10)", () => {
         expect(userApi.updateUserRole).toHaveBeenCalledWith("usr-analyst-2", "analyst");
       });
     });
+
+    it("triggers refresh and displays confirmation toast when Refresh Accounts is clicked", async () => {
+      renderWithClient(<UsersPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Super Admin")).toBeInTheDocument();
+      });
+
+      const refreshBtn = screen.getByRole("button", { name: /refresh accounts/i });
+      fireEvent.click(refreshBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText("Accounts Refreshed")).toBeInTheDocument();
+      });
+    });
   });
 
   describe("AuditLogsPage Component", () => {

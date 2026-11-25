@@ -22,7 +22,7 @@ import {
   CardContent
 } from "../../components/ui/Card.jsx";
 import { Button } from "../../components/ui/Button.jsx";
-import { Badge } from "../../components/ui/Badge.jsx";
+import { Badge, RoleBadge } from "../../components/ui/Badge.jsx";
 import { Table } from "../../components/ui/Table.jsx";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog.jsx";
 import { Modal } from "../../components/ui/Modal.jsx";
@@ -57,11 +57,29 @@ export function UsersPage() {
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
 
   // 1. Fetch Users Query
-  const { data, isLoading, isRefetching, refetch } = useQuery({
+  const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["users", page],
     queryFn: () => fetchUsers({ page, limit: pageSize }),
     keepPreviousData: true
   });
+
+  const handleRefresh = async () => {
+    try {
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      await refetch();
+      addToast({
+        title: "Accounts Refreshed",
+        message: "User directory and role privileges updated.",
+        type: "success"
+      });
+    } catch (err) {
+      addToast({
+        title: "Refresh Failed",
+        message: err?.message || "Could not refresh user directory.",
+        type: "error"
+      });
+    }
+  };
 
   const usersList = data?.users || [];
   const pagination = data?.pagination || { total: 0, page: 1, pages: 1 };
@@ -121,38 +139,29 @@ export function UsersPage() {
     setIsStatusDialogOpen(true);
   };
 
-  const getRoleBadgeVariant = (role) => {
-    switch (role?.toLowerCase()) {
-      case "admin":
-        return "critical";
-      case "analyst":
-        return "medium";
-      default:
-        return "neutral";
-    }
-  };
-
   const columns = [
     {
       key: "name",
       header: "Operator",
+      headerClassName: "min-w-[220px]",
+      className: "min-w-[220px]",
       render: (_, row) => {
         const isSelf = currentUser?._id === row?._id;
         return (
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-soc-dark border border-soc-border text-xs font-bold text-stone-200 uppercase">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-soc-dark border border-soc-border text-xs font-bold text-stone-200 uppercase">
               {row?.name ? row.name[0] : "U"}
             </div>
-            <div>
-              <div className="flex items-center gap-2 font-semibold text-stone-100">
-                <span>{row?.name}</span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 font-semibold text-stone-100 truncate">
+                <span className="truncate">{row?.name}</span>
                 {isSelf && (
-                  <span className="rounded bg-brand-primary/20 px-1.5 py-0.2 text-[10px] font-mono text-brand-primary border border-brand-primary/40">
+                  <span className="shrink-0 rounded bg-brand-primary/20 px-1.5 py-0.5 text-[10px] font-mono text-brand-primary border border-brand-primary/40">
                     You
                   </span>
                 )}
               </div>
-              <div className="font-mono text-xs text-soc-muted">{row?.email}</div>
+              <div className="font-mono text-xs text-soc-muted truncate">{row?.email}</div>
             </div>
           </div>
         );
@@ -161,25 +170,27 @@ export function UsersPage() {
     {
       key: "role",
       header: "Security Role",
-      render: (role) => (
-        <Badge variant={getRoleBadgeVariant(role)} size="sm" className="capitalize">
-          {role}
-        </Badge>
-      )
+      headerClassName: "min-w-[130px]",
+      className: "min-w-[130px]",
+      render: (role) => <RoleBadge role={role} />
     },
     {
       key: "isActive",
       header: "Status",
+      headerClassName: "min-w-[110px]",
+      className: "min-w-[110px]",
       render: (isActive) => (
         <span
-          className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-mono font-medium ${
+          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-mono font-medium border ${
             isActive
-              ? "bg-emerald-950/60 text-emerald-400 border border-emerald-800/40"
-              : "bg-stone-900 text-stone-400 border border-stone-800"
+              ? "bg-emerald-950/60 text-emerald-300 border-emerald-800/50"
+              : "bg-stone-900 text-stone-400 border-stone-800"
           }`}
         >
           <span
-            className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-400" : "bg-stone-500"}`}
+            className={`h-1.5 w-1.5 rounded-full ${
+              isActive ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" : "bg-stone-500"
+            }`}
           />
           {isActive ? "Active" : "Inactive"}
         </span>
@@ -188,8 +199,10 @@ export function UsersPage() {
     {
       key: "createdAt",
       header: "Registered",
+      headerClassName: "min-w-[120px]",
+      className: "min-w-[120px]",
       render: (createdAt) => (
-        <span className="text-xs text-soc-muted">
+        <span className="text-xs text-soc-muted font-mono">
           {createdAt
             ? new Date(createdAt).toLocaleDateString(undefined, {
                 year: "numeric",
@@ -203,17 +216,19 @@ export function UsersPage() {
     {
       key: "actions",
       header: "Actions",
-      className: "text-right",
+      headerClassName: "text-right min-w-[210px]",
+      className: "text-right min-w-[210px]",
       render: (_, row) => {
         const isSelf = currentUser?._id === row?._id;
         return (
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center justify-end gap-2 shrink-0">
             <Button
               variant="secondary"
               size="sm"
               disabled={isSelf}
               onClick={() => handleOpenRoleModal(row)}
               title={isSelf ? "Cannot change your own role" : "Modify operator role"}
+              className="h-7 text-xs px-2.5"
             >
               Change Role
             </Button>
@@ -223,7 +238,11 @@ export function UsersPage() {
               size="sm"
               disabled={isSelf}
               onClick={() => handleOpenStatusDialog(row)}
-              className={row?.isActive ? "text-rose-400 hover:bg-rose-950/30" : "text-emerald-400"}
+              className={`h-7 text-xs px-2.5 ${
+                row?.isActive
+                  ? "text-rose-400 hover:bg-rose-950/30 hover:text-rose-300"
+                  : "text-emerald-400 hover:text-emerald-300"
+              }`}
               title={isSelf ? "Cannot deactivate yourself" : "Toggle active status"}
             >
               {row?.isActive ? "Deactivate" : "Activate"}
@@ -250,13 +269,16 @@ export function UsersPage() {
         <Button
           variant="secondary"
           size="sm"
-          onClick={() => refetch()}
-          disabled={isLoading || isRefetching}
+          onClick={handleRefresh}
+          disabled={isLoading || isFetching}
+          isLoading={isFetching}
+          iconLeft={
+            <RefreshCw
+              className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
+              aria-hidden="true"
+            />
+          }
         >
-          <RefreshCw
-            className={`mr-2 h-4 w-4 ${isLoading || isRefetching ? "animate-spin" : ""}`}
-            aria-hidden="true"
-          />
           Refresh Accounts
         </Button>
       </div>
@@ -309,29 +331,37 @@ export function UsersPage() {
       </div>
 
       {/* Users Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-brand-primary" aria-hidden="true" />
-            System Accounts
-          </CardTitle>
-          <CardDescription>
-            List of registered users with role assignments and access states.
-          </CardDescription>
+      <Card className="p-0 overflow-hidden">
+        <CardHeader className="p-5 border-b border-soc-border/60 mb-0">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-brand-primary" aria-hidden="true" />
+                System Accounts
+              </CardTitle>
+              <CardDescription>
+                List of registered users with role assignments and access states.
+              </CardDescription>
+            </div>
+            <span className="text-xs text-soc-muted font-mono">
+              Showing {usersList.length} of {pagination.total} account{pagination.total === 1 ? "" : "s"}
+            </span>
+          </div>
         </CardHeader>
-        <CardContent>
+        <div className="p-0">
           <Table
             columns={columns}
             data={usersList}
-            isLoading={isLoading}
+            isLoading={isLoading || isFetching}
             page={page}
             totalPages={pagination.pages}
             totalItems={pagination.total}
             pageSize={pageSize}
             onPageChange={(p) => setPage(p)}
             emptyMessage="No user accounts registered."
+            className="border-0 rounded-none"
           />
-        </CardContent>
+        </div>
       </Card>
 
       {/* Change Role Modal */}
