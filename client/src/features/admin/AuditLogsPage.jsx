@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   FileText,
   Filter,
@@ -11,6 +11,8 @@ import {
   Activity
 } from "lucide-react";
 import { fetchAuditLogs } from "../../services/auditLogApi.js";
+import { useToast } from "../../hooks/useToast.js";
+import { cn } from "../../utils/cn.js";
 import {
   Card,
   CardHeader,
@@ -37,6 +39,8 @@ const AUDIT_ACTION_OPTIONS = [
 ];
 
 export function AuditLogsPage() {
+  const { addToast } = useToast();
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const pageSize = 15;
   const [actionFilter, setActionFilter] = useState("");
@@ -51,11 +55,29 @@ export function AuditLogsPage() {
     ...(endDate ? { endDate } : {})
   };
 
-  const { data, isLoading, isRefetching, refetch } = useQuery({
+  const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["audit-logs", queryParams],
     queryFn: () => fetchAuditLogs(queryParams),
     keepPreviousData: true
   });
+
+  const handleRefreshTrail = async () => {
+    try {
+      await queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
+      await refetch();
+      addToast({
+        title: "Audit Trail Refreshed",
+        message: "Retrieved the latest security audit trail records.",
+        type: "success"
+      });
+    } catch (err) {
+      addToast({
+        title: "Refresh Failed",
+        message: err?.message || "Failed to refresh audit trail.",
+        type: "error"
+      });
+    }
+  };
 
   const logs = data?.logs || [];
   const pagination = data?.pagination || { total: 0, page: 1, pages: 1 };
@@ -178,13 +200,16 @@ export function AuditLogsPage() {
         <Button
           variant="secondary"
           size="sm"
-          onClick={() => refetch()}
-          disabled={isLoading || isRefetching}
+          onClick={handleRefreshTrail}
+          disabled={isLoading || isFetching}
+          isLoading={isFetching}
+          iconLeft={
+            <RefreshCw
+              className={cn("h-4 w-4", isFetching && "animate-spin")}
+              aria-hidden="true"
+            />
+          }
         >
-          <RefreshCw
-            className={`mr-2 h-4 w-4 ${isLoading || isRefetching ? "animate-spin" : ""}`}
-            aria-hidden="true"
-          />
           Refresh Trail
         </Button>
       </div>

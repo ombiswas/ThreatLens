@@ -205,5 +205,20 @@ describe("Admin Console Features (Phase 10)", () => {
         );
       });
     });
+
+    it("triggers refresh and displays confirmation toast when Refresh Trail is clicked", async () => {
+      renderWithClient(<AuditLogsPage />);
+
+      const refreshBtn = await screen.findByRole("button", { name: /refresh trail/i });
+      await waitFor(() => {
+        expect(refreshBtn).not.toBeDisabled();
+      });
+
+      fireEvent.click(refreshBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText("Audit Trail Refreshed")).toBeInTheDocument();
+      });
+    });
   });
 });

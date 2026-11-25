@@ -15,7 +15,7 @@ export async function fetchDatasets() {
  */
 export async function uploadDataset(formData, onProgress) {
   const data = await api.post("/api/datasets/upload", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
+    headers: { "Content-Type": undefined },
     onUploadProgress: (progressEvent) => {
       if (onProgress && progressEvent.total) {
         const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);

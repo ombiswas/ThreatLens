@@ -169,6 +169,40 @@ describe("Datasets & Traffic Replay Feature (Phase 10)", () => {
 
       const startBtn = screen.getByRole("button", { name: /start replay/i });
       expect(startBtn).toBeDisabled();
+
+      const uploadBtn = screen.getByRole("button", { name: /upload & run detection pipeline/i });
+      expect(uploadBtn).toBeDisabled();
+    });
+
+    it("enables upload and triggers mutation when a valid CSV is selected", async () => {
+      datasetApi.uploadDataset.mockResolvedValue({
+        _id: "ds-new",
+        name: "Test Dataset",
+        rowCount: 100
+      });
+
+      renderWithClient(<DatasetsPage />);
+
+      const fullHeader = FEATURE_NAMES.join(",") + ",Label\n";
+      const validFile = new File([fullHeader], "valid_test.csv", { type: "text/csv" });
+
+      const fileInput = document.querySelector('input[type="file"]');
+      expect(fileInput).toBeInTheDocument();
+
+      fireEvent.change(fileInput, { target: { files: [validFile] } });
+
+      await waitFor(() => {
+        expect(screen.getByText("CSV Schema Verified")).toBeInTheDocument();
+      });
+
+      const uploadBtn = screen.getByRole("button", { name: /upload & run detection pipeline/i });
+      expect(uploadBtn).not.toBeDisabled();
+
+      fireEvent.click(uploadBtn);
+
+      await waitFor(() => {
+        expect(datasetApi.uploadDataset).toHaveBeenCalled();
+      });
     });
   });
 });

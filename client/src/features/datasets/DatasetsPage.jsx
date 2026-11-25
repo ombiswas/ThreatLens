@@ -46,6 +46,7 @@ export function DatasetsPage() {
 
   const isAdmin = user?.role === ROLES.ADMIN;
   const canReplay = user?.role === ROLES.ADMIN || user?.role === ROLES.ANALYST;
+  const canUpload = user?.role === ROLES.ADMIN || user?.role === ROLES.ANALYST;
 
   // File Upload State
   const fileInputRef = useRef(null);
@@ -116,16 +117,27 @@ export function DatasetsPage() {
   });
 
   useEffect(() => {
-    if (initialReplayStatus?.activeReplay) {
-      const active = initialReplayStatus.activeReplay;
+    const active =
+      initialReplayStatus?.active === true
+        ? initialReplayStatus
+        : initialReplayStatus?.activeReplay;
+
+    if (active) {
+      const processed = active.processedRows ?? active.currentIndex ?? 0;
+      const total = active.totalRows || 0;
+      const progress =
+        total > 0
+          ? Math.min(100, Math.round((processed / total) * 100))
+          : (active.progress || 0);
+
       setReplayState({
         status: "running",
-        progress: Math.min(100, Math.round((active.currentIndex / active.totalRows) * 100)),
-        processedRows: active.currentIndex,
-        totalRows: active.totalRows,
-        incidentsCount: active.incidentsCount,
-        ratePerSecond: active.ratePerSecond,
-        datasetId: active.datasetId
+        progress,
+        processedRows: processed,
+        totalRows: total,
+        incidentsCount: active.incidentsCount || 0,
+        ratePerSecond: active.ratePerSecond || 25,
+        datasetId: active.datasetId || "demo"
       });
       setSelectedReplayDataset(active.datasetId || "demo");
       setReplayRate(active.ratePerSecond || 25);
@@ -245,26 +257,32 @@ export function DatasetsPage() {
   const startReplayMutation = useMutation({
     mutationFn: () =>
       startReplaySession({
-        datasetId: selectedReplayDataset,
-        ratePerSecond: Number(replayRate)
+        datasetId: selectedReplayDataset || "demo",
+        ratePerSecond: Number(replayRate) || 25
       }),
     onSuccess: (data) => {
+      const total = data?.totalRows || data?.session?.totalRows || 0;
       setReplayState({
         status: "running",
         progress: 0,
         processedRows: 0,
-        totalRows: data?.session?.totalRows || 0,
+        totalRows: total,
         incidentsCount: 0,
-        ratePerSecond: Number(replayRate),
-        datasetId: selectedReplayDataset
+        ratePerSecond: Number(replayRate) || 25,
+        datasetId: selectedReplayDataset || "demo"
       });
       addToast({
         title: "Replay Started",
-        message: `Streaming ${data?.session?.totalRows || "flows"} at ${replayRate} flows/sec.`,
+        message: `Streaming ${total > 0 ? total.toLocaleString() : "flows"} at ${replayRate} flows/sec.`,
         type: "info"
       });
+      queryClient.invalidateQueries({ queryKey: ["replay-status"] });
     },
     onError: (err) => {
+      if (err.code === "REPLAY_ALREADY_ACTIVE" || err.message?.includes("already active")) {
+        setReplayState((prev) => ({ ...prev, status: "running" }));
+        queryClient.invalidateQueries({ queryKey: ["replay-status"] });
+      }
       addToast({
         title: "Replay Error",
         message: err.message || "Could not start traffic replay session.",
@@ -283,6 +301,9 @@ export function DatasetsPage() {
         message: "Traffic replay paused by operator.",
         type: "warning"
       });
+      queryClient.invalidateQueries({ queryKey: ["replay-status"] });
+      queryClient.invalidateQueries({ queryKey: ["incidents"] });
+      queryClient.invalidateQueries({ queryKey: ["stats"] });
     },
     onError: (err) => {
       addToast({
@@ -583,22 +604,32 @@ export function DatasetsPage() {
                     className="w-full"
                     onClick={() => stopReplayMutation.mutate()}
                     isLoading={stopReplayMutation.isPending}
-                    disabled={!canReplay}
+                    disabled={!canReplay || stopReplayMutation.isPending}
+                    iconLeft={<Square className="h-4 w-4 fill-current" aria-hidden="true" />}
                   >
-                    <Square className="mr-2 h-4 w-4 fill-current" aria-hidden="true" />
-                    Halt Replay
+                    {stopReplayMutation.isPending ? "Halting Replay..." : "Halt Replay"}
                   </Button>
                 ) : (
                   <Button
                     variant="primary"
                     size="md"
                     className="w-full"
-                    onClick={() => startReplayMutation.mutate()}
+                    onClick={() => {
+                      if (!canReplay) {
+                        addToast({
+                          title: "Permission Denied",
+                          message: "Analyst or Administrator privileges required to run replay.",
+                          type: "warning"
+                        });
+                        return;
+                      }
+                      startReplayMutation.mutate();
+                    }}
                     isLoading={startReplayMutation.isPending}
-                    disabled={!canReplay}
+                    disabled={!canReplay || startReplayMutation.isPending}
+                    iconLeft={<Play className="h-4 w-4 fill-current" aria-hidden="true" />}
                   >
-                    <Play className="mr-2 h-4 w-4 fill-current" aria-hidden="true" />
-                    Start Replay
+                    {startReplayMutation.isPending ? "Starting Replay..." : "Start Replay"}
                   </Button>
                 )}
               </div>
@@ -621,6 +652,15 @@ export function DatasetsPage() {
             </CardHeader>
 
             <CardContent className="space-y-4">
+              {!canUpload && (
+                <div className="rounded-lg border border-amber-800/60 bg-amber-950/20 p-3 text-xs text-amber-200 flex items-start gap-2">
+                  <Info className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" aria-hidden="true" />
+                  <span>
+                    Analyst or Administrator privileges required to upload datasets and run detection pipeline.
+                  </span>
+                </div>
+              )}
+
               {/* Drag & Drop Area */}
               <div
                 onDragOver={handleDragOver}
@@ -782,30 +822,63 @@ export function DatasetsPage() {
                   size="md"
                   className="w-full"
                   disabled={
+                    !canUpload ||
                     !selectedFile ||
                     !fileValidation?.valid ||
                     uploadMutation.isPending ||
                     isProcessingUpload
                   }
                   isLoading={uploadMutation.isPending || isProcessingUpload}
-                  onClick={() =>
+                  iconLeft={<UploadCloud className="h-4 w-4" aria-hidden="true" />}
+                  onClick={() => {
+                    if (!canUpload) {
+                      addToast({
+                        title: "Permission Denied",
+                        message:
+                          "Analyst or Administrator privileges required to upload datasets.",
+                        type: "warning"
+                      });
+                      return;
+                    }
+                    if (!selectedFile) {
+                      addToast({
+                        title: "No File Selected",
+                        message: "Please select or drop a valid CIC-IDS2017 CSV file first.",
+                        type: "warning"
+                      });
+                      return;
+                    }
+                    if (!fileValidation?.valid) {
+                      addToast({
+                        title: "Invalid Dataset",
+                        message:
+                          fileValidation?.error || "The selected file does not meet CSV requirements.",
+                        type: "error"
+                      });
+                      return;
+                    }
                     uploadMutation.mutate({
                       file: selectedFile,
                       name: datasetName
-                    })
-                  }
+                    });
+                  }}
                 >
-                  <UploadCloud className="mr-2 h-4 w-4" aria-hidden="true" />
-                  Upload &amp; Run Detection Pipeline
+                  {isProcessingUpload
+                    ? "Running ML Detection Pipeline..."
+                    : uploadMutation.isPending
+                      ? `Uploading (${uploadProgress}%)...`
+                      : "Upload & Run Detection Pipeline"}
                 </Button>
               </div>
 
               {/* Rejected Rows Report (if any reported by server) */}
-              {uploadResult?.rejectedRowsCount > 0 && (
+              {(uploadResult?.rejectedRowsCount > 0 || uploadResult?.rejectedRows?.length > 0) && (
                 <div className="rounded-lg border border-amber-800/60 bg-amber-950/20 p-3 text-xs text-amber-200">
                   <div className="flex items-center gap-2 font-semibold">
                     <AlertTriangle className="h-4 w-4 text-amber-400" aria-hidden="true" />
-                    <span>{uploadResult.rejectedRowsCount} Malformed Rows Skipped</span>
+                    <span>
+                      {uploadResult.rejectedRowsCount || uploadResult.rejectedRows?.length} Malformed Rows Skipped
+                    </span>
                   </div>
                   <p className="mt-1 text-[11px] text-amber-300/80">
                     Non-numeric or NaN values were skipped safely during streaming inference.
