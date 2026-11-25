@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useContext } from "react";
+import React, { useState, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ToastContext } from "../../context/toastContextDef.js";
+import { useToast } from "../../hooks/useToast.js";
 import {
   ResponsiveContainer,
   BarChart,
@@ -42,8 +42,7 @@ const EVALUATION_CLASSES = ["Benign", "DoS/DDoS", "PortScan", "BruteForce"];
 
 export function EvaluationPage() {
   const queryClient = useQueryClient();
-  const toastCtx = useContext(ToastContext);
-  const addToast = toastCtx?.addToast || (() => {});
+  const { addToast } = useToast();
   const [selectedDatasetId, setSelectedDatasetId] = useState("demo");
   const [selectedIncidentId, setSelectedIncidentId] = useState(null);
   const [isIncidentModalOpen, setIsIncidentModalOpen] = useState(false);
@@ -65,7 +64,6 @@ export function EvaluationPage() {
   const {
     data: evalData,
     isLoading: isEvalLoading,
-    isRefetching: isEvalRefetching,
     isFetching: isEvalFetching,
     refetch: refetchEval
   } = useQuery({

@@ -1,15 +1,12 @@
-import React, { useState, useCallback, useMemo, useContext } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   ScanLine,
-  Shield,
   ShieldAlert,
-  Play,
   RotateCcw,
   Code2,
   Sliders,
   CheckCircle2,
   AlertCircle,
-  Cpu,
   Flame,
   Layers,
   Activity,
@@ -27,7 +24,7 @@ import {
 import { Button } from "../../components/ui/Button.jsx";
 import { Badge, RiskBadge, AttackClassBadge } from "../../components/ui/Badge.jsx";
 import { Spinner } from "../../components/ui/Spinner.jsx";
-import { ToastContext } from "../../context/toastContextDef.js";
+import { useToast } from "../../hooks/useToast.js";
 import { detectSingleFlow } from "../../services/detectApi.js";
 import {
   FLOW_PRESETS,
@@ -37,8 +34,7 @@ import {
 import { FEATURE_NAMES } from "../../utils/constants.js";
 
 export function DetectPage() {
-  const toastCtx = useContext(ToastContext);
-  const addToast = toastCtx?.addToast || (() => {});
+  const { addToast } = useToast();
 
   // State: active flow record (all 67 features)
   const [activePresetId, setActivePresetId] = useState("benign");
