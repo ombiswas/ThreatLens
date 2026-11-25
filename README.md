@@ -99,18 +99,23 @@ flowchart TD
    - Pure, deterministic calculation: $\text{Score} = \operatorname{round}(100 \times (0.6 \times S_{\text{class}} + 0.4 \times C))$.
    - Satisfies the *Factor Conservation Invariant*: severity contribution + confidence contribution strictly sum to the final score.
    - Categorized into operational risk bands: `Low` (0–29), `Medium` (30–59), `High` (60–79), `Critical` (80–100).
-3. **Objective Baseline Benchmark:**
+3. **Interactive Single Flow Detection Playground (`/detect`):**
+   - On-demand manual flow inspection and testing console for security analysts.
+   - Quick-loads 4 authentic CIC-IDS2017 attack presets (`DoS Hulk Flood`, `PortScan Sweep`, `FTP Brute Force`, `Normal HTTPS`).
+   - Live dual-mode feature inspector (12 Key Parameters vs. Raw 67-feature JSON) with real-time ML inference, threat dial, rule baseline comparison, and explainability factors.
+4. **Objective Baseline Benchmark & Comparative Evaluation (`/evaluation`):**
    - Implements a domain-calibrated Rule-Based Heuristic baseline evaluating identical flow records.
    - Demonstrates empirical proof of ML superiority: **+36.00% Accuracy gain** and **+51.07% Macro F1 advantage** over static rules.
-4. **Live SOC Telemetry & Throttled Streaming:**
+   - Interactive Recharts visualization with multi-class confusion matrix heatmap and discrepancy analysis.
+5. **Live SOC Telemetry & Throttled Streaming (`/dashboard`):**
    - Real-time event broadcasting over Socket.IO with auto-reconnection and role-based channels.
    - Live stream panel with 250ms batch rendering and a 50-item buffer cap to prevent browser re-render storms during high-speed traffic.
-5. **Interactive Network Traffic Replay:**
+6. **Interactive Network Traffic Replay & Ingestion (`/datasets`):**
    - Built-in traffic simulator streaming flows at 1–50 flows/sec from real ingested CSV datasets without executing offensive network scans.
-6. **Accessible Dark SOC Interface:**
-   - Styled using custom Ember Studio design tokens (warm terracotta and slate palette) optimized for operator fatigue resistance.
-   - Multi-modal risk indicators (semantic icons + contrast borders + text labels) verified with **0 accessibility violations** (`axe-core`, WCAG 2.1 AA).
-7. **Enterprise Defensive Security:**
+   - Multi-layer CSV security: file extension, MIME type, PE/ELF executable binary sniffing, and header whitelist against 67 features.
+7. **Forensic Incident Triage & Safety (`/incidents`):**
+   - Searchable, filterable incident lifecycle management (`New`, `Under Review`, `Resolved`) with analyst notes, formula-injection-safe CSV export, and role-based access control (Admin, Analyst, Viewer).
+8. **Enterprise Defensive Security & RBAC:**
    - Passwords hashed with bcrypt (cost 12), pre-computed dummy hash timing defense, 5-failure lockout (15 min).
    - Role-Based Access Control (`Admin`, `Analyst`, `Viewer`) with self-demotion prevention and role-based IP masking.
    - Strict Zod validation, NoSQL injection prevention, CSV executable magic-byte sniffing, and formula injection escaping in CSV exports.
@@ -173,55 +178,119 @@ ai-cybershield/
 
 ## Local Development Setup
 
-### Prerequisites
-- **Node.js:** `v22.x LTS` installed (e.g. via fnm or nvm)
-- **Python:** `3.11` installed
-- **uv:** Astral `uv` Python package manager installed
-- **MongoDB:** Local MongoDB instance running on `localhost:27017` (or free MongoDB Atlas M0 cluster URI)
+### System Prerequisites
+- **Node.js:** `v22.x LTS` installed (check with `node -v`)
+- **Python:** `3.11.x` installed (check with `python --version`)
+- **uv:** Astral `uv` Python package manager installed:
+  - *Windows (PowerShell)*: `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"`
+  - *macOS / Linux*: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+- **MongoDB:** A running MongoDB instance (either a free MongoDB Atlas M0 cluster connection URI or local MongoDB on `mongodb://127.0.0.1:27017/threatlens`).
 
-### Quickstart (Four Terminals)
+---
 
-#### Terminal 1: Machine Learning Inference Microservice
+### Step-by-Step Execution (Three Terminals)
+
+#### Terminal 1: Machine Learning Inference Microservice (`ml-service`)
 ```powershell
 cd ml-service
+
+# Create local environment file
+Copy-Item .env.example .env    # Linux/macOS: cp .env.example .env
+
+# Install exact locked dependencies and launch FastAPI on port 7860
 uv sync --frozen
 uv run uvicorn app.main:app --host 127.0.0.1 --port 7860 --reload
-# Verify: http://localhost:7860/health -> {"status": "healthy"}
 ```
+- **Health Verification:** Open `http://127.0.0.1:7860/health` (returns `{"status":"healthy","model_loaded":true,"version":"0.1.0"}`).
 
-#### Terminal 2: Backend Express API Server
+#### Terminal 2: Backend Express API Server (`server`)
 ```powershell
 cd server
 npm install
-# Create local .env from example if not already present
-Copy-Item .env.example .env
 
-# Provision compound MongoDB database indexes
-npm run ensure-indexes
-
-# Seed initial system administrator
-npm run seed-admin
-
-# Start development server with file watching
-npm run dev
-# Server online: http://localhost:5000 | Interactive Docs: http://localhost:5000/api/docs
+# Create local environment file
+Copy-Item .env.example .env    # Linux/macOS: cp .env.example .env
 ```
 
-#### Terminal 3: Frontend Web Client
+> [!TIP]
+> **Windows Port 5000 Conflict Notice:** On Windows systems, port `5000` is frequently reserved by system services (`winnat`/Hyper-V). We configure `PORT=5001` in `server/.env` and `VITE_API_URL=http://localhost:5001` in `client/.env`.
+
+Update `server/.env` with your settings:
+```env
+PORT=5001
+NODE_ENV=development
+CLIENT_URL=http://localhost:5173
+MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/threatlens?retryWrites=true&w=majority
+JWT_SECRET=super_secure_development_jwt_secret_key_minimum_32_chars_2026!
+ML_SERVICE_URL=http://127.0.0.1:7860
+ML_API_KEY=cybershield_internal_secret_ml_key_2026
+ADMIN_EMAIL=admin@cybershield.local
+ADMIN_PASSWORD=AdminP@ssw0rdSecure!2026
+```
+
+Now provision the database and start the server:
+```powershell
+# 1. Build compound database indexes (Incident, User, AuditLog, Dataset)
+npm run ensure-indexes
+
+# 2. Seed initial administrator account
+npm run seed-admin
+
+# 3. Start development server with file watching
+npm run dev
+```
+- **Health Verification:** Open `http://localhost:5001/api/health` (returns `{"status":"healthy","database":"connected"}`).
+- **Interactive Swagger Docs:** Open `http://localhost:5001/api/docs`.
+
+#### Terminal 3: Frontend Web Client (`client`)
 ```powershell
 cd client
 npm install
-# Start Vite development server
-npm run dev
-# Web application available: http://localhost:5173
+
+# Create local environment file
+Copy-Item .env.example .env    # Linux/macOS: cp .env.example .env
+```
+Ensure `client/.env` points to the server port:
+```env
+VITE_API_URL=http://localhost:5001
+VITE_APP_ENV=development
 ```
 
-#### Terminal 4 (Optional): Offline ML Pipeline
+Start the Vite development server:
 ```powershell
-cd ml-training
-uv sync --frozen
-uv run python -m src.train --dataset sample/demo_flows.csv --out-dir artifacts
+npm run dev
 ```
+- **Application URL:** Open your browser at **`http://localhost:5173`**.
+
+---
+
+### Step 4: First-Time Login & Data Population Runbook
+
+Once all three services are running:
+
+1. **Log in to the SOC Console:**
+   - URL: `http://localhost:5173/login`
+   - **Email:** `admin@cybershield.local`
+   - **Password:** `AdminP@ssw0rdSecure!2026` (or the credentials set in `server/.env`)
+
+2. **Ingest the Demonstration Dataset:**
+   - Navigate to the **"Datasets & Replay"** tab (`/datasets`).
+   - In the **Upload Network Traffic Dataset** card, drag and drop the bundled CIC-IDS2017 stratified sample:
+     `ml-training/sample/demo_flows.csv`
+   - Set a dataset name (e.g., `CIC-IDS2017 Demo Sample`) and click **"Upload & Ingest"**.
+   - *The backend parses all 67 flow features, runs ML inference, evaluates heuristic rules, calculates 0–100 threat scores, and populates the database with real incident records.*
+
+3. **Trigger Real-Time Traffic Replay:**
+   - In the **Traffic Replay Session** card on the same page, select your uploaded dataset.
+   - Adjust the speed slider (e.g. `25 flows/sec`) and click **"Start Traffic Replay"**.
+
+4. **Verify Application Features:**
+   - **Dashboard (`/dashboard`):** Watch live incident flows arrive in real time over Socket.IO, view attack distributions, and track high/critical threat counts.
+   - **Incident Triage (`/incidents`):** Search, sort, filter by risk level, inspect explainability factor breakdowns, and record analytical investigation notes.
+   - **Comparative Evaluation (`/evaluation`):** Benchmark Random Forest performance against the heuristic baseline (accuracy, macro $F_1$, and multi-class confusion matrix).
+   - **Flow Detection Playground (`/detect`):** Test ad-hoc network flows using the 1-click presets (`DoS Hulk Flood`, `PortScan Sweep`, `FTP Brute Force`, `Normal HTTPS`).
+   - **User Management (`/admin/users`):** Manage operator roles and verify self-demotion constraints.
+   - **Audit Logs (`/admin/audit-logs`):** Inspect the immutable security audit trail.
 
 ---
 
@@ -230,32 +299,33 @@ uv run python -m src.train --dataset sample/demo_flows.csv --out-dir artifacts
 | Subproject | Variable Name | Required | Default / Example Value | Purpose |
 | :--- | :--- | :---: | :--- | :--- |
 | **server** | `NODE_ENV` | Yes | `development` / `production` | Execution environment |
-| **server** | `PORT` | No | `5000` (Render uses `10000`) | Server HTTP port |
+| **server** | `PORT` | Yes | `5001` (Render uses `10000`) | Server HTTP port (use `5001` on Windows) |
 | **server** | `CLIENT_URL` | Yes | `http://localhost:5173` | Allowed CORS & WebSocket origin |
-| **server** | `MONGO_URI` | Yes | `mongodb://localhost:27017/cybershield` | MongoDB connection string |
-| **server** | `JWT_SECRET` | Yes | `[32+ character random string]` | Secret for signing HS256 tokens |
-| **server** | `JWT_EXPIRES_IN` | No | `1h` | Token expiration duration |
-| **server** | `ML_SERVICE_URL` | Yes | `http://localhost:7860` | URL of FastAPI microservice |
-| **server** | `ML_API_KEY` | Yes | `[Secret matching ML Service]` | Internal microservice API key |
-| **server** | `ADMIN_EMAIL` | Prod | `admin@cybershield.org` | Initial administrator email |
-| **server** | `ADMIN_PASSWORD` | Prod | `SuperSecureAdmin2026!` (min 12) | Initial administrator password |
-| **client** | `VITE_API_URL` | Yes | `http://localhost:5000` | Backend API base URL |
+| **server** | `MONGO_URI` | Yes | `mongodb+srv://...` or `mongodb://127.0.0.1:27017/threatlens` | MongoDB database connection URI |
+| **server** | `JWT_SECRET` | Yes | `[32+ character random secret string]` | HS256 secret for signing auth tokens |
+| **server** | `JWT_EXPIRES_IN` | No | `1h` | Auth token validity duration |
+| **server** | `ML_SERVICE_URL` | Yes | `http://127.0.0.1:7860` | URL of FastAPI inference service |
+| **server** | `ML_API_KEY` | Yes | `[Shared Secret matching ML Service]` | Internal microservice authentication key |
+| **server** | `ADMIN_EMAIL` | Yes | `admin@cybershield.local` | Initial admin account email for seeding |
+| **server** | `ADMIN_PASSWORD` | Yes | `AdminP@ssw0rdSecure!2026` (min 12) | Initial admin account password for seeding |
+| **client** | `VITE_API_URL` | Yes | `http://localhost:5001` | Backend REST & WebSocket base URL |
 | **client** | `VITE_APP_ENV` | No | `development` / `production` | Frontend application mode |
-| **ml-service** | `ML_API_KEY` | Yes | `[Secret matching Server]` | Inbound authorization key |
+| **ml-service** | `PORT` | No | `7860` | FastAPI microservice port |
+| **ml-service** | `ML_API_KEY` | Yes | `[Shared Secret matching Server]` | Inbound authorization API key (`X-API-Key`) |
 
 ---
 
 ## Running Tests & Code Quality
 
-The monorepo contains a comprehensive automated test suite with **200 passed tests across 27 test files**:
+The monorepo contains a comprehensive automated test suite with **187 passing tests**:
 
 ```powershell
-# 1. Server Tests (Vitest + Supertest against in-memory MongoDB)
+# 1. Server Tests (14 test suites, 110 passed tests against in-memory MongoDB)
 cd server
 npm test
 npm run lint
 
-# 2. Client Tests (Vitest + React Testing Library + axe-core accessibility)
+# 2. Client Tests (11 test suites, 77 passed tests + axe-core accessibility)
 cd ../client
 npm test
 npm run lint
@@ -263,11 +333,6 @@ npm run build
 
 # 3. ML Inference Microservice Tests (Pytest)
 cd ../ml-service
-uv run pytest
-uv run ruff check .
-
-# 4. ML Offline Training Pipeline Tests (Pytest)
-cd ../ml-training
 uv run pytest
 uv run ruff check .
 ```
