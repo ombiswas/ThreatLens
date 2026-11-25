@@ -106,34 +106,39 @@ export const LiveFeedPanel = memo(function LiveFeedPanel({ onSelectIncident }) {
 
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <Radio className="h-4 w-4 text-brand-primary" aria-hidden="true" />
-            <div>
-              <CardTitle>Live Attack Flow Stream</CardTitle>
-              <CardDescription>Real-time incident stream broadcast over Socket.IO</CardDescription>
-            </div>
+      <CardHeader className="pb-3 border-b border-soc-border/60">
+        {/* Top Header Row: Title & Connection Status */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Radio className="h-4 w-4 text-brand-primary shrink-0" aria-hidden="true" />
+            <CardTitle className="text-base truncate">Live Attack Flow Stream</CardTitle>
           </div>
 
-          {/* Controls & Connection Status */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 rounded-full border border-soc-border bg-soc-dark/70 px-2.5 py-1 text-xs font-mono">
-              <span className={`h-2 w-2 rounded-full ${indicator.dot}`} aria-hidden="true" />
-              <span className={`text-[11px] font-semibold ${indicator.text}`}>
-                {indicator.label}
-              </span>
-            </div>
+          <div className="flex items-center gap-1.5 rounded-full border border-soc-border bg-soc-dark/70 px-2.5 py-0.5 text-xs font-mono shrink-0">
+            <span className={`h-2 w-2 rounded-full ${indicator.dot}`} aria-hidden="true" />
+            <span className={`text-[11px] font-semibold ${indicator.text}`}>
+              {indicator.label}
+            </span>
+          </div>
+        </div>
 
+        {/* Subtitle & Action Controls Row */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
+          <CardDescription className="text-xs text-soc-muted truncate">
+            Real-time incident stream broadcast over Socket.IO
+          </CardDescription>
+
+          <div className="flex items-center gap-1.5 shrink-0 ml-auto">
             <Button
               variant={isPaused ? "primary" : "secondary"}
               size="sm"
               onClick={togglePause}
+              className="h-7 px-2.5 text-xs"
               iconLeft={
                 isPaused ? (
-                  <Play className="h-3.5 w-3.5" aria-hidden="true" />
+                  <Play className="h-3 w-3" aria-hidden="true" />
                 ) : (
-                  <Pause className="h-3.5 w-3.5" aria-hidden="true" />
+                  <Pause className="h-3 w-3" aria-hidden="true" />
                 )
               }
             >
@@ -145,7 +150,8 @@ export const LiveFeedPanel = memo(function LiveFeedPanel({ onSelectIncident }) {
               size="sm"
               onClick={clearFeed}
               aria-label="Clear live feed"
-              iconLeft={<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />}
+              className="h-7 px-2.5 text-xs"
+              iconLeft={<Trash2 className="h-3 w-3" aria-hidden="true" />}
             >
               Clear
             </Button>
@@ -153,10 +159,11 @@ export const LiveFeedPanel = memo(function LiveFeedPanel({ onSelectIncident }) {
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col p-0">
-        <div className="max-h-[360px] overflow-y-auto divide-y divide-soc-border/40 px-5">
+      <CardContent className="flex-1 flex flex-col p-0 min-h-0 overflow-hidden">
+        <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
           {feedItems.length === 0 ? (
-            <div className="py-12 text-center text-xs text-soc-muted">
+            <div className="flex flex-col items-center justify-center h-full min-h-[220px] text-center text-xs text-soc-muted px-4">
+              <Radio className="h-6 w-6 text-soc-dim mb-2 animate-pulse" aria-hidden="true" />
               {socketStatus === "connected" ? (
                 <span>
                   Listening on WebSocket... Attack incidents from traffic replays will stream here
@@ -178,8 +185,10 @@ export const LiveFeedPanel = memo(function LiveFeedPanel({ onSelectIncident }) {
                 <div
                   key={incident._id || incident.id || `${incident.detectedAt}-${idx}`}
                   onClick={() => onSelectIncident?.(incident)}
-                  className={`group flex items-center justify-between py-2.5 px-2 -mx-2 rounded transition-colors cursor-pointer hover:bg-soc-raised/80 ${
-                    isRecent ? "bg-brand-primary/5" : ""
+                  className={`group flex flex-col gap-1.5 p-2.5 rounded-lg border transition-all cursor-pointer hover:bg-soc-raised/90 hover:border-soc-border ${
+                    isRecent
+                      ? "bg-brand-primary/10 border-brand-primary/30 shadow-sm"
+                      : "bg-soc-dark/40 border-soc-border/40"
                   }`}
                   role="button"
                   tabIndex={0}
@@ -189,9 +198,30 @@ export const LiveFeedPanel = memo(function LiveFeedPanel({ onSelectIncident }) {
                     }
                   }}
                 >
-                  {/* Left: Time & Source */}
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="font-mono text-[11px] text-soc-muted shrink-0">
+                  {/* Top Line: Badges, Score, and Inspect Indicator */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <AttackClassBadge attackClass={incident.mlClass} />
+                      <RiskBadge risk={risk} showIcon={false} />
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="font-mono text-xs font-bold text-stone-100">
+                        Score: {score}
+                      </span>
+                      <ArrowUpRight
+                        className="h-3.5 w-3.5 text-stone-500 group-hover:text-brand-accent transition-colors"
+                        aria-hidden="true"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Bottom Line: Source IP & Timestamp */}
+                  <div className="flex items-center justify-between gap-2 text-xs font-mono">
+                    <span className="font-semibold text-stone-200 truncate" title={incident.source}>
+                      {incident.source || "192.168.1.xxx"}
+                    </span>
+                    <span className="text-[11px] text-soc-muted shrink-0">
                       {incident.detectedAt
                         ? new Date(incident.detectedAt).toLocaleTimeString([], {
                             hour: "2-digit",
@@ -200,22 +230,6 @@ export const LiveFeedPanel = memo(function LiveFeedPanel({ onSelectIncident }) {
                           })
                         : "Just now"}
                     </span>
-
-                    <AttackClassBadge attackClass={incident.mlClass} />
-
-                    <span className="font-mono text-xs font-semibold text-stone-200 truncate">
-                      {incident.source || "192.168.1.xxx"}
-                    </span>
-                  </div>
-
-                  {/* Right: Score, Risk & Detail arrow */}
-                  <div className="flex items-center gap-2.5 shrink-0">
-                    <div className="font-mono text-xs font-bold text-stone-100">Score: {score}</div>
-                    <RiskBadge risk={risk} showIcon={false} />
-                    <ArrowUpRight
-                      className="h-3.5 w-3.5 text-stone-500 group-hover:text-stone-200 transition-colors"
-                      aria-hidden="true"
-                    />
                   </div>
                 </div>
               );
@@ -224,7 +238,7 @@ export const LiveFeedPanel = memo(function LiveFeedPanel({ onSelectIncident }) {
         </div>
 
         {feedItems.length > 0 && (
-          <div className="border-t border-soc-border/60 bg-soc-dark/30 px-5 py-2 text-[11px] text-soc-dim flex justify-between items-center">
+          <div className="border-t border-soc-border/60 bg-soc-dark/50 px-4 py-2 text-[11px] text-soc-dim flex justify-between items-center shrink-0">
             <span>
               Showing latest {feedItems.length} of max {MAX_LIVE_FEED_ITEMS} buffered events
             </span>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   UploadCloud,
@@ -79,11 +79,33 @@ export function DatasetsPage() {
   const {
     data: datasets = [],
     isLoading: isDatasetsLoading,
+    isFetching: isDatasetsFetching,
     refetch: refetchDatasets
   } = useQuery({
     queryKey: ["datasets"],
     queryFn: fetchDatasets
   });
+
+  const handleRefreshLibrary = useCallback(async () => {
+    try {
+      await Promise.all([
+        refetchDatasets(),
+        queryClient.invalidateQueries({ queryKey: ["datasets"] }),
+        queryClient.invalidateQueries({ queryKey: ["replay-status"] })
+      ]);
+      addToast({
+        title: "Library Refreshed",
+        message: "Dataset inventory and replay statuses updated.",
+        type: "success"
+      });
+    } catch (err) {
+      addToast({
+        title: "Refresh Failed",
+        message: err.message || "Failed to refresh dataset inventory.",
+        type: "error"
+      });
+    }
+  }, [refetchDatasets, queryClient, addToast]);
 
   // 2. Fetch Active Replay Status on Mount
   const { data: initialReplayStatus } = useQuery({
@@ -400,13 +422,16 @@ export function DatasetsPage() {
         <Button
           variant="secondary"
           size="sm"
-          onClick={() => refetchDatasets()}
-          disabled={isDatasetsLoading}
+          onClick={handleRefreshLibrary}
+          disabled={isDatasetsFetching}
+          isLoading={isDatasetsFetching}
+          iconLeft={
+            <RefreshCw
+              className={`h-4 w-4 ${isDatasetsFetching ? "animate-spin" : ""}`}
+              aria-hidden="true"
+            />
+          }
         >
-          <RefreshCw
-            className={`mr-2 h-4 w-4 ${isDatasetsLoading ? "animate-spin" : ""}`}
-            aria-hidden="true"
-          />
           Refresh Library
         </Button>
       </div>

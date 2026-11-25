@@ -73,7 +73,7 @@ export const TimelineChart = memo(function TimelineChart({
   });
 
   return (
-    <Card>
+    <Card className="h-full flex flex-col">
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
@@ -111,17 +111,19 @@ export const TimelineChart = memo(function TimelineChart({
         </div>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="flex-1 flex flex-col justify-center">
         {isLoading ? (
           <div className="h-72 w-full flex items-center justify-center">
             <Skeleton className="h-64 w-full rounded" />
           </div>
         ) : chartData.length === 0 ? (
-          <EmptyState
-            icon={Activity}
-            title="No timeline telemetry available"
-            description="Replay flows or upload a network capture dataset to view attack time distributions."
-          />
+          <div className="h-72 w-full flex items-center justify-center">
+            <EmptyState
+              icon={Activity}
+              title="No timeline telemetry available"
+              description="Replay flows or upload a network capture dataset to view attack time distributions."
+            />
+          </div>
         ) : (
           <div className="h-72 w-full pt-2">
             <ResponsiveContainer width="100%" height="100%">

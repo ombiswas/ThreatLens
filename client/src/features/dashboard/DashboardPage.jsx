@@ -92,8 +92,8 @@ export function DashboardPage() {
       <SummaryCards summary={summaryQuery.data} isLoading={summaryQuery.isLoading} />
 
       {/* 2. Live Telemetry Stream and Timeline */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 items-stretch">
+        <div className="lg:col-span-2 h-full flex flex-col">
           <TimelineChart
             timeline={timelineQuery.data || []}
             interval={interval}
@@ -102,7 +102,7 @@ export function DashboardPage() {
           />
         </div>
 
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 h-full flex flex-col">
           <LiveFeedPanel onSelectIncident={handleSelectIncident} />
         </div>
       </div>
