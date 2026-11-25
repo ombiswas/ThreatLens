@@ -7,13 +7,13 @@ import {
 } from "../services/incidentService.js";
 
 export async function getIncidentsHandler(req, res) {
-  const { page, limit, sortBy, sortOrder, ...filters } = req.query;
+  const { page, limit, sortBy, sortOrder, sort, order, ...filters } = req.query;
 
   const result = await getIncidents({
     page,
     limit,
-    sortBy,
-    sortOrder,
+    sortBy: sortBy || sort,
+    sortOrder: sortOrder || order,
     filters,
     user: req.user
   });

@@ -73,7 +73,7 @@ export async function seedAdmin(options = {}) {
 }
 
 // Execute directly if run as a script
-if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, "/")}`) {
+if (process.argv[1] && import.meta.url === `file:///${process.argv[1].replace(/\\/g, "/")}`) {
   (async () => {
     try {
       await connectDB(env.MONGO_URI);
