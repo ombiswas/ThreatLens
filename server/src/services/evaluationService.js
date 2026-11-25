@@ -254,7 +254,8 @@ export async function computeDatasetEvaluation(datasetId) {
       flowObj[feat] = parseFloat(row[feat]) || 0;
     }
     const baselineResult = evaluateBaseline(flowObj);
-    const baselinePred = baselineResult.baselineClass;
+    const baselinePred =
+      baselineResult.prediction || baselineResult.baselineClass || ATTACK_CLASSES.BENIGN;
 
     mlMatrix[trueClass][mlPred] = (mlMatrix[trueClass][mlPred] || 0) + 1;
     baselineMatrix[trueClass][baselinePred] = (baselineMatrix[trueClass][baselinePred] || 0) + 1;
@@ -292,7 +293,7 @@ export async function computeDatasetEvaluation(datasetId) {
           trueClass,
           mlPrediction: mlPred,
           baselinePrediction: baselinePred,
-          baselineRule: baselineResult.baselineRule
+          baselineRule: baselineResult.rule || baselineResult.baselineRule || "HEURISTIC_RULE"
         });
       }
     }

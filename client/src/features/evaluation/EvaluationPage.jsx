@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState, useCallback, useContext } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ToastContext } from "../../context/toastContextDef.js";
 import {
   ResponsiveContainer,
   BarChart,
@@ -40,6 +41,9 @@ import { Spinner } from "../../components/ui/Spinner.jsx";
 const EVALUATION_CLASSES = ["Benign", "DoS/DDoS", "PortScan", "BruteForce"];
 
 export function EvaluationPage() {
+  const queryClient = useQueryClient();
+  const toastCtx = useContext(ToastContext);
+  const addToast = toastCtx?.addToast || (() => {});
   const [selectedDatasetId, setSelectedDatasetId] = useState("demo");
   const [selectedIncidentId, setSelectedIncidentId] = useState(null);
   const [isIncidentModalOpen, setIsIncidentModalOpen] = useState(false);
@@ -62,6 +66,7 @@ export function EvaluationPage() {
     data: evalData,
     isLoading: isEvalLoading,
     isRefetching: isEvalRefetching,
+    isFetching: isEvalFetching,
     refetch: refetchEval
   } = useQuery({
     queryKey: ["evaluation", selectedDatasetId],
@@ -69,9 +74,29 @@ export function EvaluationPage() {
     staleTime: 30000
   });
 
-  const mlMetrics = evalData?.data?.mlModel || {};
-  const baselineMetrics = evalData?.data?.baseline || {};
+  const mlMetrics = evalData?.mlModel || evalData?.data?.mlModel || {};
+  const baselineMetrics = evalData?.baseline || evalData?.data?.baseline || {};
   const confusionMatrix = mlMetrics?.confusionMatrix || {};
+
+  const handleRecalculate = useCallback(async () => {
+    try {
+      await Promise.all([
+        refetchEval(),
+        queryClient.invalidateQueries({ queryKey: ["evaluation", selectedDatasetId] })
+      ]);
+      addToast({
+        title: "Evaluation Recalculated",
+        message: "Comparative metrics and confusion matrix updated successfully.",
+        type: "success"
+      });
+    } catch (err) {
+      addToast({
+        title: "Recalculation Failed",
+        message: err.message || "Failed to recalculate evaluation metrics.",
+        type: "error"
+      });
+    }
+  }, [refetchEval, queryClient, selectedDatasetId, addToast]);
 
   // Format Recharts data for per-class comparisons
   const classComparisonData = EVALUATION_CLASSES.map((cls) => {
@@ -163,13 +188,16 @@ export function EvaluationPage() {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => refetchEval()}
-            disabled={isEvalLoading || isEvalRefetching}
+            onClick={handleRecalculate}
+            disabled={isEvalLoading || isEvalFetching}
+            isLoading={isEvalFetching}
+            iconLeft={
+              <RefreshCw
+                className={`h-4 w-4 ${isEvalFetching ? "animate-spin" : ""}`}
+                aria-hidden="true"
+              />
+            }
           >
-            <RefreshCw
-              className={`mr-2 h-4 w-4 ${isEvalLoading || isEvalRefetching ? "animate-spin" : ""}`}
-              aria-hidden="true"
-            />
             Recalculate
           </Button>
         </div>
@@ -223,8 +251,8 @@ export function EvaluationPage() {
             Evaluation Scope
           </div>
           <div className="mt-2 font-display text-lg font-bold text-stone-100">
-            {evalData?.data?.totalEvaluated
-              ? `${evalData.data.totalEvaluated.toLocaleString()} flows`
+            {(evalData?.totalEvaluated ?? evalData?.data?.totalEvaluated)
+              ? `${(evalData.totalEvaluated ?? evalData.data.totalEvaluated).toLocaleString()} flows`
               : "Demo Benchmark"}
           </div>
           <div className="mt-1 text-[11px] text-soc-muted">

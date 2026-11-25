@@ -2,6 +2,7 @@ import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ToastProvider } from "../context/ToastContext.jsx";
 import { EvaluationPage } from "../features/evaluation/EvaluationPage.jsx";
 import * as datasetApi from "../services/datasetApi.js";
 import * as evalApi from "../services/evaluationApi.js";
@@ -106,7 +107,11 @@ function renderWithClient(ui) {
     }
   });
 
-  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <ToastProvider>{ui}</ToastProvider>
+    </QueryClientProvider>
+  );
 }
 
 describe("Comparative Evaluation Feature (Phase 10)", () => {
