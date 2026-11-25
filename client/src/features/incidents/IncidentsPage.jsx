@@ -79,6 +79,8 @@ export function IncidentsPage() {
     () => ({
       page,
       limit,
+      sortBy: sort,
+      sortOrder: order,
       sort,
       order,
       search: searchParam,
@@ -98,8 +100,8 @@ export function IncidentsPage() {
   });
 
   const incidents = data?.incidents || [];
-  const totalItems = data?.total || 0;
-  const totalPages = data?.totalPages || 1;
+  const totalItems = data?.pagination?.total ?? data?.total ?? 0;
+  const totalPages = data?.pagination?.pages ?? data?.totalPages ?? 1;
 
   const handleSort = useCallback(
     (newKey, newOrder) => {

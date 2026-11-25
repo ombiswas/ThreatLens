@@ -9,6 +9,23 @@ let serverWakingCallbacks = [];
 let pendingRequestsCount = 0;
 let coldStartTimer = null;
 let isServerWakingState = false;
+let hasServerAwakened = false;
+
+export const isLocalEnvironment = () => {
+  try {
+    if (env.VITE_APP_ENV === "development") return true;
+    if (env.VITE_API_URL?.includes("localhost") || env.VITE_API_URL?.includes("127.0.0.1")) {
+      return true;
+    }
+    if (typeof window !== "undefined") {
+      const hostname = window.location.hostname;
+      if (hostname === "localhost" || hostname === "127.0.0.1") return true;
+    }
+  } catch {
+    // fallback
+  }
+  return false;
+};
 
 export const getAuthToken = () => {
   if (inMemoryToken) return inMemoryToken;
@@ -65,9 +82,13 @@ const notifyServerWaking = (isWaking) => {
 
 const trackRequestStart = () => {
   pendingRequestsCount += 1;
+  // Local servers and servers that have already returned responses are not sleeping
+  if (isLocalEnvironment() || hasServerAwakened) {
+    return;
+  }
   if (!coldStartTimer) {
     coldStartTimer = setTimeout(() => {
-      if (pendingRequestsCount > 0) {
+      if (pendingRequestsCount > 0 && !hasServerAwakened && !isLocalEnvironment()) {
         notifyServerWaking(true);
       }
     }, 4000);
@@ -76,7 +97,7 @@ const trackRequestStart = () => {
 
 const trackRequestEnd = () => {
   pendingRequestsCount = Math.max(0, pendingRequestsCount - 1);
-  if (pendingRequestsCount === 0) {
+  if (pendingRequestsCount === 0 || hasServerAwakened || isLocalEnvironment()) {
     if (coldStartTimer) {
       clearTimeout(coldStartTimer);
       coldStartTimer = null;
@@ -87,7 +108,7 @@ const trackRequestEnd = () => {
 
 export const api = axios.create({
   baseURL: env.VITE_API_URL,
-  timeout: 15000,
+  timeout: 30000,
   headers: {
     "Content-Type": "application/json"
   }
@@ -110,6 +131,10 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => {
+    hasServerAwakened = true;
+    if (isServerWakingState) {
+      notifyServerWaking(false);
+    }
     trackRequestEnd();
     // Unwrap standard JSend envelope { status: "success", data: ... }
     if (response.data && response.data.status === "success" && response.data.data !== undefined) {
@@ -118,6 +143,12 @@ api.interceptors.response.use(
     return response.data;
   },
   (error) => {
+    if (error.response?.status) {
+      hasServerAwakened = true;
+      if (isServerWakingState) {
+        notifyServerWaking(false);
+      }
+    }
     trackRequestEnd();
 
     const status = error.response ? error.response.status : 0;
