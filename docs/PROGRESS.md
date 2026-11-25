@@ -378,5 +378,20 @@
   - 0 ESLint errors or warnings across `server/` and `client/`.
   - Production client build successful (`vite build`, 314 kB gzip).
 
+### Session 16 - 2026-11-25
+- **Goal:** Operational stabilization, Evaluation metric synchronization, and Interactive Flow Detection Playground implementation.
+- **Files Added/Changed:**
+  - `client/src/features/dashboard/DetectPage.jsx`: Replaced empty placeholder with full interactive ad-hoc flow detection playground (quick-load presets, dual-mode key parameters/JSON inspector, live ML inference, 0-100 score gauge, baseline comparison, factor attribution).
+  - `client/src/features/dashboard/detectPresets.js`: Extracted authentic CIC-IDS2017 presets (Normal HTTPS, DoS Hulk, PortScan, FTP BruteForce) with full 67-feature vectors and key editing fields.
+  - `client/src/services/detectApi.js`: Client API client for `POST /api/detect` with single and batch dispatch.
+  - `client/src/tests/detect.test.jsx`: 5 comprehensive unit tests for preset loading, mode toggling, threat detection execution, results display, and error handling.
+  - `client/src/features/evaluation/EvaluationPage.jsx`: Fixed JSend envelope unwrap bug and bound Recalculate button with query invalidation and loading feedback.
+  - `server/src/services/evaluationService.js`: Fixed baseline prediction property lookup (`prediction` instead of `baselineClass`).
+- **Tests & Verification:**
+  - Client Vitest suite: 11 files, 76/76 tests passed.
+  - Client production build: compiled cleanly in 802ms (0 errors).
+  - Server Vitest suite: 14 files, 110/110 tests passed.
+
+
 
 
